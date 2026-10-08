@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Guia do yolo-people-2-the-floor</title>
-<meta name="description" content="Como o yolo-people-2-the-floor segue pessoas num chão com uma câmara e projeta sobre elas: montagem física, calibração e como os ficheiros encaixam.">
-<link rel="alternate" hreflang="en" href="https://mattchu.github.io/yolo-people-2-the-floor/">
-<link rel="alternate" hreflang="pt-PT" href="https://mattchu.github.io/yolo-people-2-the-floor/pt/">
+<title>Guia do YOLO-people-projection</title>
+<meta name="description" content="Como o YOLO-people-projection segue pessoas num chão com uma câmara e projeta sobre elas: montagem física, calibração e como os ficheiros encaixam.">
+<link rel="alternate" hreflang="en" href="https://mattchu.github.io/YOLO-people-projection/">
+<link rel="alternate" hreflang="pt-PT" href="https://mattchu.github.io/YOLO-people-projection/pt/">
 <style>
   :root {
     --bg: #fbfaf7;
@@ -123,9 +123,9 @@
 
 <header class="hero">
   <p class="lang"><a href="../" hreflang="en" lang="en">English</a></p>
-  <h1>yolo-people-2-the-floor</h1>
+  <h1>YOLO-people-projection</h1>
   <p class="lede">Uma câmara observa pessoas num chão. O computador calcula onde cada uma está, em metros, envia isso por OSC, e um projetor desenha no chão exatamente debaixo dos seus pés.</p>
-  <p>Este guia mostra como funciona: a montagem física, a calibração que alinha tudo, e como os ficheiros se alimentam uns aos outros. Os comandos passo a passo estão no <a href="https://github.com/MattChu/yolo-people-2-the-floor/blob/main/README.pt.md">README</a>.</p>
+  <p>Este guia mostra como funciona: a montagem física, a calibração que alinha tudo, e como os ficheiros se alimentam uns aos outros. Os comandos passo a passo estão no <a href="https://github.com/MattChu/YOLO-people-projection/blob/main/README.pt.md">README</a>.</p>
 </header>
 
 <nav class="toc" aria-label="Índice">
@@ -343,7 +343,7 @@
 
 python calibrate.py --source 2 --width 1920 --height 1080 --fps 60 --fourcc MJPG \
     --proj-pos 1920,0 --proj-size 1280x800 --floor-size 2.4x1.4</code></pre>
-<p>A câmara e a resolução ficam guardadas com a calibração, por isso tudo o que vem depois as usa sem ser preciso dizer-lhe. Uma câmara por HDMI (uma DSLR ou uma câmara de vídeo) funciona da mesma maneira, através de um dispositivo de captura HDMI para USB.</p>
+<p>A câmara, a resolução, e a cadência e o formato se os pediu, ficam guardados com a calibração, por isso tudo o que vem depois as usa sem ser preciso dizer-lhe. Uma câmara por HDMI (uma DSLR ou uma câmara de vídeo) funciona da mesma maneira, através de um dispositivo de captura HDMI para USB.</p>
 
 <h3><code>calibrate.py</code>: câmara, projetor e chão</h3>
 <div class="steps">
@@ -360,6 +360,7 @@ python calibrate.py --source 2 --width 1920 --height 1080 --fps 60 --fourcc MJPG
 ├── floor        width_m, height_m              o retângulo de fita
 ├── cameras
 │   └── cam0     source, resolution             que câmara, a que resolução
+│                fps, fourcc                    se os pediu
 │                H_cam_to_floor                 píxeis da câmara → metros
 │                foot_correction                do foot_calibrate.py
 └── projectors
@@ -408,8 +409,8 @@ python calibrate.py --source 2 --width 1920 --height 1080 --fps 60 --fourcc MJPG
   <tr><td><code>x</code></td><td>float</td><td>metros a partir da marca 1 ao longo da largura, de 0 a W</td></tr>
   <tr><td><code>y</code></td><td>float</td><td>metros a partir da marca 1 ao longo da altura, de 0 a H</td></tr>
 </table></div>
-<div class="note"><p><strong>Não se envia nada quando alguém sai.</strong> Esqueça quem não tiver dado notícias há cerca de meio segundo. O seguidor também perde às vezes alguém por um momento e volta a encontrá-lo com um novo id; a aba People dos sketches de Processing trata um id novo que aparece perto de alguém acabado de perder como a mesma pessoa, para que mantenha a sua cor.</p></div>
-<p>O <a href="https://github.com/MattChu/yolo-people-2-the-floor/blob/main/README.pt.md#6-as-mensagens-osc-e-como-usá-las-noutros-programas">README</a> mostra como recebê-las no TouchDesigner, Max, Pure Data e Python.</p>
+<div class="note"><p><strong>Não se envia nada quando alguém sai.</strong> Esqueça quem não tiver dado notícias há cerca de meio segundo. Se o seguidor perder alguém e o voltar a encontrar dentro de uns segundos, perto de onde o perdeu, volta a enviá-lo com o mesmo id: guarde a pessoa durante esse tempo se quiser que volte como ela mesma.</p></div>
+<p>O <a href="https://github.com/MattChu/YOLO-people-projection/blob/main/README.pt.md#6-as-mensagens-osc-e-como-usá-las-noutros-programas">README</a> mostra como recebê-las no TouchDesigner, Max, Pure Data e Python.</p>
 
 <!-- 7 -->
 <h2 id="files">7. Como os ficheiros encaixam</h2>
@@ -481,17 +482,17 @@ python calibrate.py --source 2 --width 1920 --height 1080 --fps 60 --fourcc MJPG
   <tr><td><code>track_osc.py</code></td><td>O seguidor para pôr uma peça a funcionar: envia OSC, sem janela de projetor. <code>--simulate</code> para pessoas imaginárias.</td></tr>
   <tr><td><code>pipeline.py</code></td><td>Uma imagem da câmara → pés (o ponto médio entre os tornozelos, ou a base do retângulo da pessoa se os tornozelos não forem claros) → metros no chão, dentro da fita → seguimento.</td></tr>
   <tr><td><code>models.py</code></td><td>Carrega o YOLO no melhor hardware desta máquina: uma placa NVIDIA, se houver, senão o processador, com um limite de <em>threads</em> para deixar espaço ao sketch.</td></tr>
-  <tr><td><code>tracking.py</code></td><td>Associa os pés de cada imagem às pessoas já conhecidas, suaviza o seu movimento e mantém os seus ids durante breves falhas.</td></tr>
+  <tr><td><code>tracking.py</code></td><td>Associa os pés de cada imagem às pessoas já conhecidas, suaviza o seu movimento e mantém os seus ids quando falham por um momento.</td></tr>
   <tr><td><code>cameras.py</code></td><td>Imagens de qualquer câmara, escolhida pelo número, ou de um ficheiro de vídeo, tudo igual para o resto. Corra-o para listar as suas câmaras.</td></tr>
   <tr><td><code>calib_utils.py</code></td><td>A matemática da calibração (homografias), o padrão de marcadores e funções para as janelas.</td></tr>
   <tr><td><code>osc.py</code></td><td>Constrói e envia as mensagens OSC, sem nenhum pacote extra.</td></tr>
   <tr><td><code>recording.py</code></td><td>As teclas c / p / f gravam a imagem da câmara, a imagem do projetor ou o ecrã, em <code>recordings/</code>.</td></tr>
-  <tr><td><code>processing/…/People.pde</code></td><td>Recebe o OSC e mantém cada pessoa estável: suavizada, a aparecer e desaparecer gradualmente, e reassociada quando o seguidor lhe muda o número.</td></tr>
+  <tr><td><code>processing/…/People.pde</code></td><td>Recebe o OSC, faz cada pessoa deslizar entre mensagens e fá-la aparecer e desaparecer gradualmente.</td></tr>
   <tr><td><code>processing/…/Projection.pde</code></td><td>Encontra a calibração e o ecrã do projetor, e ajusta o canvas do sketch, em escala de metros, ao chão.</td></tr>
 </table></div>
 
 <footer>
-  <p>yolo-people-2-the-floor · <a href="https://github.com/MattChu/yolo-people-2-the-floor">github.com/MattChu/yolo-people-2-the-floor</a> · licença MIT. Para guardar uma cópia, imprima esta página para PDF a partir do navegador.</p>
+  <p>YOLO-people-projection · <a href="https://github.com/MattChu/YOLO-people-projection">github.com/MattChu/YOLO-people-projection</a> · licença MIT. Para guardar uma cópia, imprima esta página para PDF a partir do navegador.</p>
 </footer>
 
 </main>

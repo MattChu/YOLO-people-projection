@@ -31,11 +31,12 @@ def add_camera_args(p):
                         "at, or the camera's own)")
     p.add_argument("--height", type=int, default=None, help="and this high (as --width)")
     p.add_argument("--fps", type=float, default=None,
-                   help="ask the camera for this many frames a second (default: the camera's own)")
+                   help="ask the camera for this many frames a second (default: the rate it was "
+                        "calibrated at, or the camera's own)")
     p.add_argument("--fourcc", default=None,
                    help="ask the camera for this pixel format, e.g. MJPG: many USB cameras only "
                         "give their largest sizes or highest frame rates compressed (default: the "
-                        "camera's own)")
+                        "format it was calibrated with, or the camera's own)")
     p.add_argument("--exposure", type=float, default=None,
                    help="fix the camera's exposure, in its own units (Linux: usually 1-10000, "
                         "in 0.1 ms; Windows: a power of 2 in seconds, e.g. -6 for 1/64 s), "
@@ -48,6 +49,25 @@ def source_name(args, default="0"):
     """The chosen camera as one string: a camera number or a video path.
     `default` is used when --source wasn't given."""
     return args.source if args.source is not None else default
+
+
+def calibrated_camera(args, cam):
+    """The source to open for calibrated camera `cam` (its entry in
+    calibration.json): the one it was calibrated with, unless --source says
+    otherwise. Also asks for the size, frame rate and pixel format it was
+    calibrated at, where not given on the command line."""
+    calibrated_source = cam.get("source", "0")
+    source = source_name(args, default=calibrated_source)
+    if source != calibrated_source:
+        print(f"Warning: using camera '{source}', but '{args.camera}' was calibrated with "
+              f"'{calibrated_source}'. Positions will be wrong unless it's the same view.")
+    if args.width is None and args.height is None:
+        args.width, args.height = cam["resolution"]
+    if args.fps is None:
+        args.fps = cam.get("fps")
+    if args.fourcc is None:
+        args.fourcc = cam.get("fourcc")
+    return source
 
 
 def open_frames(args, source=None):

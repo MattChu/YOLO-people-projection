@@ -8,14 +8,14 @@
 // (which also covers lost packets).
 //
 // Call updatePeople() once at the start of draw(). It keeps `people`, one
-// Person each, steadier than the tracker's ids:
+// Person per tracker id:
 // - a Person glides between sightings (which arrive as often as the tracker
 //   runs, often less often than the sketch draws) and fades in when they
 //   arrive (`shown`, 0-1)
 // - when the tracker loses them, they stay in `people`, lost (isLost()), and
-//   fade out. The tracker sometimes loses someone for a moment and finds them
-//   again under a new id: if a new id turns up within REATTACH_DIST_M of a
-//   lost Person within REATTACH_MS, it becomes that Person again
+//   fade out. The tracker keeps a lost person's id for a couple of seconds
+//   (track_osc.py --reattach-time), in case it finds them again nearby: if
+//   their id is heard again within REMEMBER_MS, they're back
 // - personArrived(p) and personLeft(p), in the main tab, are called when a
 //   Person is made and when a lost one is finally forgotten
 //
@@ -35,18 +35,15 @@ final int PERSON_TIMEOUT_MS = 500;
 final float EASE = 0.25;
 // people fade in when they arrive and out when they're lost, over this long
 final int FADE_MS = 400;
-// a lost Person is kept this long...
-final int REATTACH_MS = 2000;
-// ...for a new tracker id first seen within this many metres of them to take over
-final float REATTACH_DIST_M = 0.5;
+// a lost Person is kept this long, in case the tracker finds them again: longer
+// than track_osc.py's --reattach-time, as they're lost here only after PERSON_TIMEOUT_MS
+final int REMEMBER_MS = 2500;
 // the mouse's test person
 final int MOUSE_ID = -1;
 
 class Person {
-  // the tracker's id when they were first seen: stays the same when it renumbers them
+  // the tracker's id for them
   int id;
-  // the tracker's id for them now
-  int trackId;
   // where they are, in metres, gliding towards tx, ty: where they were last seen
   float x, y, tx, ty;
   // how visible to make them, 0-1: fades in when they arrive and out when they're lost
@@ -55,7 +52,7 @@ class Person {
   int lostAt = -1;
 
   Person(int id, float x, float y) {
-    this.id = this.trackId = id;
+    this.id = id;
     this.x = this.tx = x;
     this.y = this.ty = y;
   }
@@ -163,55 +160,23 @@ void updatePeople() {
   HashSet<Integer> claimed = new HashSet<Integer>();
   for (int i = people.size() - 1; i >= 0; i--) {
     Person p = people.get(i);
-    Sighting s = sightings.get(p.trackId);
+    Sighting s = sightings.get(p.id);
     if (s != null) {
       p.lostAt = -1;
       p.tx = s.x;
       p.ty = s.y;
-      claimed.add(p.trackId);
+      claimed.add(p.id);
     } else if (!p.isLost()) {
       p.lostAt = now;
-    } else if (now - p.lostAt > REATTACH_MS) {
+    } else if (now - p.lostAt > REMEMBER_MS) {
       people.remove(i);
       personLeft(p);
     }
   }
 
-  // tracker ids no Person has yet
-  ArrayList<Integer> newIds = new ArrayList<Integer>();
+  // tracker ids no Person has yet are new people
   for (int id : sightings.keySet()) {
-    if (!claimed.contains(id)) newIds.add(id);
-  }
-
-  // a new id next to a lost Person becomes them, the closest pair first (so two
-  // people lost and found together are each themselves again)
-  while (true) {
-    Person best = null;
-    int bestId = 0;
-    float bestDistSq = REATTACH_DIST_M * REATTACH_DIST_M;
-    for (int id : newIds) {
-      Sighting s = sightings.get(id);
-      if (s == null) continue;
-      for (Person p : people) {
-        if (!p.isLost()) continue;
-        float dx = s.x - p.tx, dy = s.y - p.ty;
-        if (dx * dx + dy * dy <= bestDistSq) {
-          best = p;
-          bestId = id;
-          bestDistSq = dx * dx + dy * dy;
-        }
-      }
-    }
-    if (best == null) break;
-    best.trackId = bestId;
-    best.lostAt = -1;
-    best.tx = sightings.get(bestId).x;
-    best.ty = sightings.get(bestId).y;
-    newIds.remove((Integer) bestId);
-  }
-
-  // everyone else is new
-  for (int id : newIds) {
+    if (claimed.contains(id)) continue;
     Sighting s = sightings.get(id);
     if (s == null) continue;
     Person p = new Person(id, s.x, s.y);

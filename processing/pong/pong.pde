@@ -358,7 +358,7 @@ void personArrived(Person p) {
   println("arrived: #" + p.id + " at " + nf(p.x, 0, 2) + ", " + nf(p.y, 0, 2) + " m");
 }
 
-// someone has gone: lost, faded out and not found again within REATTACH_MS (People tab)
+// someone has gone: lost, faded out and not found again within REMEMBER_MS (People tab)
 void personLeft(Person p) {
   println("left: #" + p.id);
 }

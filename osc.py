@@ -3,7 +3,8 @@ osc.py - send tracked positions as OSC messages over UDP (no extra packages).
 
 Each frame, one message per tracked person or object:
 
-  /person  id x y     id: int, stable while the person is tracked
+  /person  id x y     id: int, the same while the person is tracked, and when
+                      they're found again within --reattach-time of being lost
                       x, y: float, metres on the floor from the first tape mark
                       (0..width along the tape's first side, 0..height along the other)
 

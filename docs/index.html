@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>yolo-people-2-the-floor guide</title>
-<meta name="description" content="How yolo-people-2-the-floor tracks people on a floor with a camera and projects onto them: physical setup, calibration, and how the files fit together.">
-<link rel="alternate" hreflang="en" href="https://mattchu.github.io/yolo-people-2-the-floor/">
-<link rel="alternate" hreflang="pt-PT" href="https://mattchu.github.io/yolo-people-2-the-floor/pt/">
+<title>YOLO-people-projection guide</title>
+<meta name="description" content="How YOLO-people-projection tracks people on a floor with a camera and projects onto them: physical setup, calibration, and how the files fit together.">
+<link rel="alternate" hreflang="en" href="https://mattchu.github.io/YOLO-people-projection/">
+<link rel="alternate" hreflang="pt-PT" href="https://mattchu.github.io/YOLO-people-projection/pt/">
 <style>
   :root {
     --bg: #fbfaf7;
@@ -123,9 +123,9 @@
 
 <header class="hero">
   <p class="lang"><a href="pt/" hreflang="pt-PT" lang="pt-PT">Português</a></p>
-  <h1>yolo-people-2-the-floor</h1>
+  <h1>YOLO-people-projection</h1>
   <p class="lede">A camera watches people on a floor. The computer works out where each of them is standing, in metres, sends that out as OSC, and a projector draws on the floor exactly under their feet.</p>
-  <p>This guide shows how it works: the physical setup, the calibration that lines everything up, and how the files feed each other. The step-by-step commands are in the <a href="https://github.com/MattChu/yolo-people-2-the-floor#readme">README</a>.</p>
+  <p>This guide shows how it works: the physical setup, the calibration that lines everything up, and how the files feed each other. The step-by-step commands are in the <a href="https://github.com/MattChu/YOLO-people-projection#readme">README</a>.</p>
 </header>
 
 <nav class="toc" aria-label="Contents">
@@ -343,7 +343,7 @@
 
 python calibrate.py --source 2 --width 1920 --height 1080 --fps 60 --fourcc MJPG \
     --proj-pos 1920,0 --proj-size 1280x800 --floor-size 2.4x1.4</code></pre>
-<p>The camera and its size are saved with the calibration, so everything after that uses them without being told. A camera over HDMI (a DSLR or camcorder) works the same way, through an HDMI-to-USB capture device.</p>
+<p>The camera, its size, and any frame rate and format you asked for are saved with the calibration, so everything after that uses them without being told. A camera over HDMI (a DSLR or camcorder) works the same way, through an HDMI-to-USB capture device.</p>
 
 <h3><code>calibrate.py</code>: camera, projector and floor</h3>
 <div class="steps">
@@ -360,6 +360,7 @@ python calibrate.py --source 2 --width 1920 --height 1080 --fps 60 --fourcc MJPG
 ├── floor        width_m, height_m              the taped rectangle
 ├── cameras
 │   └── cam0     source, resolution             which camera, at what size
+│                fps, fourcc                    if you asked for them
 │                H_cam_to_floor                 camera pixels → metres
 │                foot_correction                from foot_calibrate.py
 └── projectors
@@ -408,8 +409,8 @@ python calibrate.py --source 2 --width 1920 --height 1080 --fps 60 --fourcc MJPG
   <tr><td><code>x</code></td><td>float</td><td>metres from tape mark 1 along the width, 0 to W</td></tr>
   <tr><td><code>y</code></td><td>float</td><td>metres from tape mark 1 along the height, 0 to H</td></tr>
 </table></div>
-<div class="note"><p><strong>Nothing is sent when someone leaves.</strong> Forget anyone you haven't heard about for half a second or so. The tracker also sometimes loses someone for a moment and finds them again under a new id; the Processing sketches' People tab treats a new id that appears close to someone just lost as the same person, so they keep their colour.</p></div>
-<p>The <a href="https://github.com/MattChu/yolo-people-2-the-floor#6-the-osc-messages-and-using-them-elsewhere">README</a> shows how to receive them in TouchDesigner, Max, Pure Data and Python.</p>
+<div class="note"><p><strong>Nothing is sent when someone leaves.</strong> Forget anyone you haven't heard about for half a second or so. If the tracker loses someone and finds them again within a couple of seconds, close to where they were lost, they come back under the same id: keep a person that long if you want them to come back as themselves.</p></div>
+<p>The <a href="https://github.com/MattChu/YOLO-people-projection#6-the-osc-messages-and-using-them-elsewhere">README</a> shows how to receive them in TouchDesigner, Max, Pure Data and Python.</p>
 
 <!-- 7 -->
 <h2 id="files">7. How the files fit together</h2>
@@ -481,17 +482,17 @@ python calibrate.py --source 2 --width 1920 --height 1080 --fps 60 --fourcc MJPG
   <tr><td><code>track_osc.py</code></td><td>The tracker for running a piece: sends OSC, no projector window. <code>--simulate</code> for imaginary people.</td></tr>
   <tr><td><code>pipeline.py</code></td><td>One camera frame → feet (the midpoint of the ankles, or the bottom of the person's box if their ankles aren't clear) → floor metres, inside the tape → tracks.</td></tr>
   <tr><td><code>models.py</code></td><td>Loads YOLO on this machine's best hardware: an NVIDIA card if there is one, else the CPU, with a thread limit so it leaves room for the sketch.</td></tr>
-  <tr><td><code>tracking.py</code></td><td>Matches each frame's feet to the people already known, smooths their movement, and keeps their ids through brief misses.</td></tr>
+  <tr><td><code>tracking.py</code></td><td>Matches each frame's feet to the people already known, smooths their movement, and keeps their ids when they're missed for a moment.</td></tr>
   <tr><td><code>cameras.py</code></td><td>Frames from any camera, chosen by its number, or a video file, all the same to the rest. Run it to list your cameras.</td></tr>
   <tr><td><code>calib_utils.py</code></td><td>The calibration maths (homographies), the marker pattern, and window helpers.</td></tr>
   <tr><td><code>osc.py</code></td><td>Builds and sends the OSC messages, with no extra package.</td></tr>
   <tr><td><code>recording.py</code></td><td>Keys c / p / f record the camera view, the projector image or the screen, to <code>recordings/</code>.</td></tr>
-  <tr><td><code>processing/…/People.pde</code></td><td>Receives the OSC, and keeps each person steady: smoothed, faded in and out, and re-attached when the tracker renumbers them.</td></tr>
+  <tr><td><code>processing/…/People.pde</code></td><td>Receives the OSC, glides each person between messages, and fades them in and out.</td></tr>
   <tr><td><code>processing/…/Projection.pde</code></td><td>Finds the calibration and the projector screen, and warps the sketch's metre-scaled canvas onto the floor.</td></tr>
 </table></div>
 
 <footer>
-  <p>yolo-people-2-the-floor · <a href="https://github.com/MattChu/yolo-people-2-the-floor">github.com/MattChu/yolo-people-2-the-floor</a> · MIT licence. To keep a copy, print this page to PDF from your browser.</p>
+  <p>YOLO-people-projection · <a href="https://github.com/MattChu/YOLO-people-projection">github.com/MattChu/YOLO-people-projection</a> · MIT licence. To keep a copy, print this page to PDF from your browser.</p>
 </footer>
 
 </main>

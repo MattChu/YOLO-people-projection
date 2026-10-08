@@ -1,6 +1,6 @@
 """
 recording.py - start/stop video recordings with keys, shared by calibrate.py,
-foot_calibrate.py and follow.py.
+foot_calibrate.py, follow.py and track_osc.py.
 
   c  camera window: the camera image with everything drawn on it
   p  projector: exactly what's sent to the projector

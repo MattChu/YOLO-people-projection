@@ -1,5 +1,5 @@
 """
-calib_utils.py - shared calibration and floor-geometry helpers for calibrate.py and follow.py.
+calib_utils.py - calibration and floor-geometry helpers shared by the scripts.
 
 Three coordinate systems, all linked through the floor:
   camera     pixels in a camera image

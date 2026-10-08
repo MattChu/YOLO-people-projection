@@ -1,4 +1,4 @@
-# yolo-people-2-the-floor
+# YOLO-people-projection
 
 *[Português](README.pt.md)*
 
@@ -14,7 +14,7 @@ sketches, TouchDesigner, Max, Pure Data, your own Python, anything that speaks
 OSC. A projector calibrated to the same rectangle lets a sketch draw in metres
 and have it land on the floor where people are.
 
-**[The illustrated guide](https://mattchu.github.io/yolo-people-2-the-floor/)**
+**[The illustrated guide](https://mattchu.github.io/YOLO-people-projection/)**
 (also [docs/index.html](docs/index.html)) shows the physical setup, the
 calibration and how the pieces fit together, with diagrams. Print it to PDF
 from your browser if you want a copy on paper.
@@ -82,8 +82,8 @@ from your browser if you want a copy on paper.
 ### 2.2 Download this repository
 
 ```sh
-git clone https://github.com/MattChu/yolo-people-2-the-floor.git
-cd yolo-people-2-the-floor
+git clone https://github.com/MattChu/YOLO-people-projection.git
+cd YOLO-people-projection
 ```
 
 Every command below is run from inside this folder.
@@ -209,6 +209,8 @@ Check everything is installed by running the tests:
 python test_osc.py
 python test_calibration.py
 python test_follow.py
+python test_foot_calibrate.py
+python test_recording.py
 ```
 
 The YOLO model (`yolo26n-pose.pt`, about 8 MB) downloads by itself the first
@@ -218,7 +220,7 @@ time a script needs it.
 
 ## 3. Set up the space
 
-The [guide](https://mattchu.github.io/yolo-people-2-the-floor/#setup) has
+The [guide](https://mattchu.github.io/YOLO-people-projection/#setup) has
 diagrams of all of this.
 
 1. **Aim the projector** at the floor. It doesn't need to be square on: the
@@ -258,12 +260,9 @@ Use your camera's number (2.5), your projector's position and resolution, and
 your rectangle's width × height in metres. The camera gives its own size and
 frame rate unless you ask for others with `--width`, `--height` and `--fps`;
 many USB cameras only give their largest sizes or fastest rates as compressed
-frames, so add `--fourcc MJPG` for those. Some examples:
+frames, so add `--fourcc MJPG` for those. Some other examples:
 
 ```sh
-# camera 2, at the size and rate it gives by default
-python calibrate.py --source 2 --proj-pos 1920,0 --proj-size 1280x800 --floor-size 2.4x1.4
-
 # a USB camera at 1920x1080 and 60 frames a second, as compressed frames
 python calibrate.py --source 2 --width 1920 --height 1080 --fps 60 --fourcc MJPG \
     --proj-pos 1920,0 --proj-size 1280x800 --floor-size 2.4x1.4
@@ -276,11 +275,11 @@ python calibrate.py --source 1 --width 1920 --height 1080 --fourcc MJPG \
 python calibrate.py --source 2 --exposure 80 --proj-pos 1920,0 --proj-size 1280x800 --floor-size 2.4x1.4
 ```
 
-The camera number and size are saved with the calibration, so the scripts
-after this (`foot_calibrate.py`, `follow.py`, `track_osc.py`) use the same
-camera at the same size without being told: no `--source` needed. (Give
-`--exposure` again if you used it, or set the camera's exposure once on the
-camera itself.)
+The camera number, size, and any `--fps` and `--fourcc` are saved with the
+calibration, so the scripts after this (`foot_calibrate.py`, `follow.py`,
+`track_osc.py`) use the same camera the same way without being told: no
+`--source` needed. Only `--exposure` isn't saved: give it again if you used it,
+or set the exposure once on the camera itself.
 
 Then, with the keys in the camera window:
 
@@ -339,9 +338,9 @@ Then run a sketch. Open one of these in Processing and press Run:
 
 - `processing/template/template.pde`: a circle at everyone's feet. The
   starting point for your own.
-- `processing/grid_peeps/grid_peeps.pde`: lines through everyone, with
-  swirling logos between people (press **m** for its other modes: a trail
-  behind each person, and a floor full of logos that part round them).
+- `processing/grid_peeps/grid_peeps.pde`: a floor full of logos that part
+  round people. Press **m** for its other modes: lines through everyone with
+  logos swirling between them, and a trail of logos behind each person.
 - `processing/pong/pong.pde`: two people play pong the length of the floor.
 
 The sketch goes full screen on the projector if it's connected, or opens a
@@ -395,11 +394,11 @@ tracks (as often as the camera and computer allow, or `--max-fps`), to
 | `y` | float | metres from tape mark 1, along the height (0 to H) |
 
 **Nothing is sent when someone leaves.** Forget anyone you haven't heard
-about for half a second or so (that also covers lost packets). The tracker
-sometimes loses someone for a moment and finds them again under a new id: the
-Processing sketches' People tab re-attaches a new id that appears close to
-someone just lost, so they keep their colour; do the same in your own code
-if it matters.
+about for half a second or so (that also covers lost packets). If the tracker
+loses someone, it keeps their id for a couple of seconds (`--reattach-time`):
+found again close to where they were lost (`--reattach-dist`),
+they're sent under the same id again. So keep a person you've stopped hearing
+about for a couple of seconds if you want them to come back as themselves.
 
 Receiving them elsewhere:
 
@@ -441,7 +440,7 @@ and make sure its firewall lets UDP port 12000 in.
 3. `people` holds everyone on the floor: `p.x`, `p.y` in metres (or
    `p.canvasX()`, `p.canvasY()` in canvas pixels), smoothed between messages;
    `p.shown` fades from 0 to 1 as they arrive and back as they leave; `p.id`
-   stays the same even when the tracker renumbers them.
+   is the tracker's id, which stays the same through short dropouts.
 4. `personArrived(p)` and `personLeft(p)` in your main tab are called as
    people come and go.
 
@@ -472,7 +471,7 @@ folder or the nearest one above it, so it works anywhere inside this folder.
 | `requirements.txt`, `requirements-*.lock`, `lock_requirements.py` | the Python packages |
 | `test_*.py` | checks for the calibration, tracking, OSC and recording code |
 
-How they connect is drawn in the [guide](https://mattchu.github.io/yolo-people-2-the-floor/#files).
+How they connect is drawn in the [guide](https://mattchu.github.io/YOLO-people-projection/#files).
 
 ---
 

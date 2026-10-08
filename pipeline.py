@@ -21,7 +21,7 @@ import cv2
 import numpy as np
 
 from calib_utils import apply_h, floor_polygon_mask, h_from_json, load_calibration, projector_footprint
-from cameras import source_name
+from cameras import calibrated_camera
 from models import add_device_args, load_model
 from tracking import FloorTracker
 
@@ -48,7 +48,13 @@ def add_pipeline_args(p):
                    help="max jump in metres between frames for the same object "
                         "(default: 15%% of the projected area's size)")
     p.add_argument("--max-missed", type=int, default=5,
-                   help="frames an object can go undetected before it's dropped (default: 5)")
+                   help="frames an object can go undetected before it's lost (default: 5)")
+    p.add_argument("--reattach-time", type=float, default=2.0,
+                   help="seconds a lost object is remembered: found again in that time, it keeps "
+                        "its id (default: 2)")
+    p.add_argument("--reattach-dist", type=float, default=None,
+                   help="how close, in metres, to where a lost object was last seen it must be "
+                        "found again to keep its id (default: 25%% of the projected area's size)")
     p.add_argument("--no-foot-correction", action="store_true",
                    help="ignore the correction from foot_calibrate.py (to compare with and without)")
     p.add_argument("--dark-objects", action="store_true",
@@ -144,15 +150,8 @@ class FloorPipeline:
         self.proj_w, self.proj_h = proj["resolution"]
         self.proj_size = projected_size_m(self.H_floor_proj, self.proj_w, self.proj_h)
 
-        # Use the camera this calibration was made with, unless told otherwise
-        calibrated_source = self.cam.get("source", "0")
-        self.source = source_name(args, default=calibrated_source)
-        if self.source != calibrated_source:
-            print(f"Warning: using camera '{self.source}', but '{args.camera}' was calibrated with "
-                  f"'{calibrated_source}'. Positions will be wrong unless it's the same view.")
+        self.source = calibrated_camera(args, self.cam)
         print(f"Camera: {self.source}")
-        if args.width is None and args.height is None:  # ask for the size it was calibrated at
-            args.width, args.height = self.cam["resolution"]
 
         if args.dark_objects:
             inset = args.inset if args.inset is not None else 0.08 * min(self.floor_w, self.floor_h)
@@ -175,8 +174,9 @@ class FloorPipeline:
                 print("No foot correction yet: run foot_calibrate.py to line positions up with feet")
 
         self.tracker = FloorTracker(
-            smooth=args.smooth, max_missed=args.max_missed,
-            match_dist=args.match_dist if args.match_dist is not None else 0.15 * self.proj_size)
+            smooth=args.smooth, max_missed=args.max_missed, reattach_time=args.reattach_time,
+            match_dist=args.match_dist if args.match_dist is not None else 0.15 * self.proj_size,
+            reattach_dist=args.reattach_dist if args.reattach_dist is not None else 0.25 * self.proj_size)
         self.frames = 0
 
     def process(self, frame, dt):

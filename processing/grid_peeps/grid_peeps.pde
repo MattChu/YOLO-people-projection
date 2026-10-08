@@ -1,11 +1,12 @@
-// grid_peeps - a horizontal and a vertical line through everyone on the floor,
-// in their colour.
-// Each person has a colour. Every pair of people spans a rectangle (they are
-// at opposite corners), where copies of the logo (data/mill_logo.svg) swirl,
-// each a different size and a different shade between the pair's two colours.
+// grid_peeps - three pieces with the logo; press m to switch. It starts in FIELD.
+//
+// GRID mode: each person has a colour, and a horizontal and a vertical line
+// through them in it. Every pair of people spans a rectangle (they are at
+// opposite corners), where copies of the logo (data/mill_logo.svg) swirl, each
+// a different size and a different shade between the pair's two colours.
 // Where rectangles overlap, so do their swirls.
 //
-// TRAIL mode (press m to switch): no lines, but everyone leaves a jumbled
+// TRAIL mode: no lines, but everyone leaves a jumbled
 // trail of the logo as they walk, in their colour: copies of all sizes,
 // overlapping, each circling and turning as it fades away.
 //
@@ -166,12 +167,6 @@ void draw() {
 
   drawSwirls(shown);
 
-  // the taped rectangle's edge, to check the calibration lines up with the tape
-  canvas.noFill();
-  canvas.stroke(80);
-  canvas.strokeWeight(4);
-  //canvas.rect(2, 2, canvas.width - 4, canvas.height - 4);
-
   // a horizontal and a vertical line through everyone, in their colour
   for (Person p : shown) {
     canvas.stroke(colourOf(p), 255 * p.shown);
@@ -199,8 +194,8 @@ void drawSwirls(ArrayList<Person> shown) {
       color pc = colourOf(p), qc = colourOf(q);
       float logoW = max(LOGO_MIN_M * PIXELS_PER_METRE, LOGO_SIZE * min(w, h));
 
-      // the same pair always swirls the same way (whoever arrived first), so
-      // working it out afresh each frame gives smooth motion
+      // seeded by the pair's ids, so the same pair always swirls the same way
+      // and working it out afresh each frame gives smooth motion
       Random rnd = new Random(min(p.id, q.id) * 100003L + max(p.id, q.id));
       float direction = rnd.nextBoolean() ? 1 : -1;
 
@@ -431,7 +426,7 @@ void personArrived(Person p) {
   colours.put(p, PALETTE[choices.get((int) random(choices.size()))]);
 }
 
-// someone has gone: lost, faded out and not found again within REATTACH_MS
+// someone has gone: lost, faded out and not found again within REMEMBER_MS
 // (People tab). While lost they were still in `people`, with isLost() true
 void personLeft(Person p) {
   colours.remove(p);

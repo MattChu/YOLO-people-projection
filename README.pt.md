@@ -1,4 +1,4 @@
-# yolo-people-2-the-floor
+# YOLO-people-projection
 
 *[English](README.md)*
 
@@ -14,7 +14,7 @@ incluídos, TouchDesigner, Max, Pure Data, o seu próprio Python, qualquer coisa
 que fale OSC. Um projetor calibrado para o mesmo retângulo permite a um sketch
 desenhar em metros e fazê-lo aparecer no chão onde as pessoas estão.
 
-**[O guia ilustrado](https://mattchu.github.io/yolo-people-2-the-floor/pt/)**
+**[O guia ilustrado](https://mattchu.github.io/YOLO-people-projection/pt/)**
 (também em [docs/pt/index.html](docs/pt/index.html)) mostra a montagem física,
 a calibração e como as peças encaixam umas nas outras, com diagramas. Imprima-o
 para PDF a partir do navegador se quiser uma cópia em papel.
@@ -87,8 +87,8 @@ escrevem.
 ### 2.2 Descarregar este repositório
 
 ```sh
-git clone https://github.com/MattChu/yolo-people-2-the-floor.git
-cd yolo-people-2-the-floor
+git clone https://github.com/MattChu/YOLO-people-projection.git
+cd YOLO-people-projection
 ```
 
 Todos os comandos a seguir correm dentro desta pasta.
@@ -217,6 +217,8 @@ Confirme que está tudo instalado correndo os testes:
 python test_osc.py
 python test_calibration.py
 python test_follow.py
+python test_foot_calibrate.py
+python test_recording.py
 ```
 
 O modelo YOLO (`yolo26n-pose.pt`, cerca de 8 MB) descarrega-se sozinho da
@@ -226,7 +228,7 @@ primeira vez que um script precisa dele.
 
 ## 3. Preparar o espaço
 
-O [guia](https://mattchu.github.io/yolo-people-2-the-floor/pt/#setup) tem
+O [guia](https://mattchu.github.io/YOLO-people-projection/pt/#setup) tem
 diagramas de tudo isto.
 
 1. **Aponte o projetor** para o chão. Não precisa de ficar de frente: a
@@ -267,12 +269,9 @@ largura × altura do seu retângulo em metros. A câmara dá a sua própria
 resolução e cadência, a não ser que peça outras com `--width`, `--height` e
 `--fps`; muitas câmaras USB só dão as maiores resoluções ou as cadências mais
 altas com imagens comprimidas, por isso acrescente `--fourcc MJPG` nesses
-casos. Alguns exemplos:
+casos. Outros exemplos:
 
 ```sh
-# a câmara 2, com a resolução e a cadência que dá por omissão
-python calibrate.py --source 2 --proj-pos 1920,0 --proj-size 1280x800 --floor-size 2.4x1.4
-
 # uma câmara USB a 1920x1080 e 60 imagens por segundo, com imagens comprimidas
 python calibrate.py --source 2 --width 1920 --height 1080 --fps 60 --fourcc MJPG \
     --proj-pos 1920,0 --proj-size 1280x800 --floor-size 2.4x1.4
@@ -285,11 +284,12 @@ python calibrate.py --source 1 --width 1920 --height 1080 --fourcc MJPG \
 python calibrate.py --source 2 --exposure 80 --proj-pos 1920,0 --proj-size 1280x800 --floor-size 2.4x1.4
 ```
 
-O número da câmara e a resolução ficam guardados com a calibração, por isso os
-scripts seguintes (`foot_calibrate.py`, `follow.py`, `track_osc.py`) usam a
-mesma câmara com a mesma resolução sem ser preciso dizer-lhes: não é preciso
-`--source`. (Volte a dar `--exposure` se o usou, ou acerte a exposição de uma
-vez na própria câmara.)
+O número da câmara, a resolução, e `--fps` e `--fourcc` se os usou, ficam
+guardados com a calibração, por isso os scripts seguintes (`foot_calibrate.py`,
+`follow.py`, `track_osc.py`) usam a mesma câmara da mesma maneira sem ser
+preciso dizer-lhes: não é preciso `--source`. Só `--exposure` não fica
+guardado: volte a dá-lo se o usou, ou acerte a exposição de uma vez na própria
+câmara.
 
 Depois, com as teclas na janela da câmara:
 
@@ -350,10 +350,10 @@ Depois corra um sketch. Abra um destes no Processing e carregue em Run:
 
 - `processing/template/template.pde`: um círculo nos pés de cada pessoa. O
   ponto de partida para os seus.
-- `processing/grid_peeps/grid_peeps.pde`: linhas que passam por cada pessoa,
-  com logótipos a rodopiar entre as pessoas (carregue em **m** para os outros
-  modos: um rasto atrás de cada pessoa, e um chão cheio de logótipos que se
-  afastam à volta delas).
+- `processing/grid_peeps/grid_peeps.pde`: um chão cheio de logótipos que se
+  afastam à volta das pessoas. Carregue em **m** para os outros modos: linhas
+  que passam por cada pessoa, com logótipos a rodopiar entre elas, e um rasto
+  de logótipos atrás de cada pessoa.
 - `processing/pong/pong.pde`: duas pessoas jogam pong ao longo do chão.
 
 O sketch abre em ecrã inteiro no projetor, se estiver ligado, ou numa janela
@@ -407,11 +407,12 @@ imagem que segue (tantas vezes quanto a câmara e o computador permitirem, ou
 | `y` | float | metros a partir da marca 1, ao longo da altura (0 a H) |
 
 **Não se envia nada quando alguém sai.** Esqueça quem não tiver dado notícias
-há cerca de meio segundo (isso também cobre pacotes perdidos). O seguidor às
-vezes perde alguém por um momento e volta a encontrá-lo com um novo id: a
-aba People dos sketches de Processing trata um id novo que aparece perto de
-alguém acabado de perder como a mesma pessoa, para que mantenha a sua cor;
-faça o mesmo no seu código se isso for importante.
+há cerca de meio segundo (isso também cobre pacotes perdidos). Se o seguidor
+perder alguém, guarda o seu id durante uns segundos (`--reattach-time`): se
+voltar a encontrá-lo perto de onde o perdeu
+(`--reattach-dist`), envia-o outra vez com o mesmo id. Por isso, guarde durante
+uns segundos quem deixou de dar notícias, se quiser que volte como a mesma
+pessoa.
 
 Recebê-las noutros programas:
 
@@ -454,7 +455,7 @@ IP desse computador, e confirme que a firewall dele deixa entrar a porta UDP
 3. `people` tem toda a gente que está no chão: `p.x`, `p.y` em metros (ou
    `p.canvasX()`, `p.canvasY()` em píxeis do canvas), suavizados entre
    mensagens; `p.shown` vai de 0 a 1 quando a pessoa chega e volta a 0 quando
-   sai; `p.id` mantém-se mesmo quando o seguidor lhe muda o número.
+   sai; `p.id` é o id do seguidor, que se mantém durante falhas curtas.
 4. `personArrived(p)` e `personLeft(p)`, na aba principal, são chamadas quando
    as pessoas chegam e saem.
 
@@ -486,7 +487,7 @@ sítio dentro desta pasta.
 | `requirements.txt`, `requirements-*.lock`, `lock_requirements.py` | os pacotes Python |
 | `test_*.py` | testes do código de calibração, seguimento, OSC e gravação |
 
-A forma como se ligam está desenhada no [guia](https://mattchu.github.io/yolo-people-2-the-floor/pt/#files).
+A forma como se ligam está desenhada no [guia](https://mattchu.github.io/YOLO-people-projection/pt/#files).
 
 ---
 

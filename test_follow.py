@@ -106,6 +106,39 @@ def test_tracker_ignores_one_frame_blip():
     assert tracker.tracks == []
 
 
+def test_tracker_reattaches_lost_track():
+    dt = 1 / 10
+    tracker = FloorTracker(match_dist=0.1, max_missed=2, reattach_time=2.0, reattach_dist=0.5)
+    for _ in range(5):
+        tracks = tracker.update([(1.0, 1.0)], dt)
+    assert [t.id for t in tracks] == [1]
+    for _ in range(10):  # a second unseen: lost, not reported
+        tracks = tracker.update([], dt)
+    assert tracks == []
+    tracks = tracker.update([(1.3, 1.1)], dt)  # found again nearby
+    assert [t.id for t in tracks] == [1], f"lost track not taken over: {[t.id for t in tracks]}"
+    print("  tracker: someone missed for a second keeps their id")
+
+
+def test_tracker_forgets_lost_track():
+    dt = 1 / 10
+    tracker = FloorTracker(max_missed=2, reattach_time=2.0, reattach_dist=0.5)
+    for _ in range(5):
+        tracker.update([(1.0, 1.0)], dt)
+    for _ in range(30):  # gone for three seconds
+        tracker.update([], dt)
+    assert tracker.tracks == []
+    tracker.update([(1.0, 1.0)], dt)
+    assert [t.id for t in tracker.update([(1.0, 1.0)], dt)] == [2]
+    tracker = FloorTracker(max_missed=2, reattach_dist=0.5)
+    for _ in range(5):
+        tracker.update([(1.0, 1.0)], dt)
+    for _ in range(5):
+        tracker.update([], dt)
+    tracker.update([(2.0, 1.0)], dt)  # too far from where they were lost
+    assert [t.id for t in tracker.update([(2.0, 1.0)], dt)] == [2]
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_") and callable(fn):

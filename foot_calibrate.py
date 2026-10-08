@@ -15,7 +15,7 @@ where you're currently detected (before correction).
 After the last target, the projector shows each target (white ring), where you
 were detected (red) and where the correction puts you (green), and the errors
 are printed. The correction is saved to the camera in calibration.json, and
-follow.py uses it. Recalibrating the camera with calibrate.py clears it.
+follow.py and track_osc.py use it. Recalibrating the camera with calibrate.py clears it.
 
 Keys (in any window):
   SPACE  capture the current target now     n  skip it     b  back one target
@@ -37,7 +37,7 @@ import numpy as np
 from calib_utils import (add_window_args, apply_h, correction_errors, fit_floor_correction, floor_circle,
                          h_from_json, h_to_json, load_calibration, open_windows, save_calibration,
                          show_preview, timestamp)
-from cameras import add_camera_args, open_frames, source_name
+from cameras import add_camera_args, calibrated_camera, open_frames
 from recording import Recorder, add_record_args
 from models import add_device_args, load_model
 from pipeline import PERSON, feet_in_camera
@@ -115,12 +115,7 @@ def main():
     targets = target_grid(floor_w, floor_h, *args.targets, args.inset)
     print(f"{len(targets)} targets over the {floor_w:g} x {floor_h:g} m taped area")
 
-    calibrated_source = cam.get("source", "0")
-    source = source_name(args, default=calibrated_source)
-    if source != calibrated_source:
-        print(f"Warning: using camera '{source}', but '{args.camera}' was calibrated with '{calibrated_source}'.")
-    if args.width is None and args.height is None:  # ask for the size it was calibrated at
-        args.width, args.height = cam["resolution"]
+    source = calibrated_camera(args, cam)
 
     model = load_model(args)
     cam_win = f"camera {args.camera} ({source})"

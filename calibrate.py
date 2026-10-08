@@ -18,7 +18,7 @@ the projected area and visible to the camera. Then (keys work in the camera wind
 
 In a dark room, auto exposure brightens the picture for the room and can wash
 out the bright markers. If few markers are found, fix the camera's exposure
-with --exposure (in the camera's own units: on Linux usually 0.1 ms, so try
+with --exposure (in the camera's own units: on Linux usually tenths of a ms, so try
 80, then 40 or 160; on Windows a power of 2 in seconds, so try -6, then -7 or -5).
 
 In any step, c / p / f start/stop recording the camera window / projector /
@@ -241,6 +241,8 @@ def main():
             cal["cameras"][args.camera] = {
                 "source": source_name(args),
                 "resolution": [cam_w, cam_h],
+                **({"fps": args.fps} if args.fps else {}),
+                **({"fourcc": args.fourcc} if args.fourcc else {}),
                 "H_cam_to_floor": h_to_json(H_cam_floor),
                 **marker_info,
                 "updated": timestamp(),

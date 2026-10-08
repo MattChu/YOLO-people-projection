@@ -1,5 +1,5 @@
 // template - a starting point for a floor piece driven by the tracker.
-// Copy this folder to processing/<name>/ and rename template.pde to <name>.pde.
+// Copy this folder to my-sketches/<name>/ and rename template.pde to <name>.pde.
 //
 // Run the tracker alongside it:
 //   python track_osc.py               # people, from the camera
@@ -54,7 +54,7 @@ void personArrived(Person p) {
   println("arrived: #" + p.id + " at " + nf(p.x, 0, 2) + ", " + nf(p.y, 0, 2) + " m");
 }
 
-// someone has gone: lost, faded out and not found again within REATTACH_MS
+// someone has gone: lost, faded out and not found again within REMEMBER_MS
 // (People tab). While lost they were still in `people`, with isLost() true
 void personLeft(Person p) {
   println("left: #" + p.id);

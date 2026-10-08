@@ -8,7 +8,8 @@ pipeline.py (people with YOLO, or --dark-objects); each tracked position is
 mapped floor -> projector and a circle of a fixed real-world size drawn there.
 
 Only detections inside the taped rectangle get a circle. Positions are smoothed
-by a small floor-space tracker (--smooth), which also bridges brief dropouts.
+by a floor-space tracker (--smooth), which keeps ids when someone is missed for
+a moment (--reattach-time).
 With --osc, the positions are also sent as OSC, exactly as track_osc.py sends
 them (see osc.py), to test a receiver side by side with the circles.
 
