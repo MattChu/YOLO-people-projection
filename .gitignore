@@ -1,0 +1,26 @@
+# Python environment and caches
+yolo-env/
+__pycache__/
+*.pyc
+
+# Model weights and exports (downloaded automatically by Ultralytics)
+*.pt
+*_openvino_model/
+*_ncnn_model/
+*.onnx
+*.engine
+
+# Machine-specific: depends on where the camera and projector are right now
+calibration.json
+calibration.json.tmp
+
+# Your own sketches, kept out of this repo (they can be repos of their own)
+my-sketches/
+
+# Recordings
+recordings/
+*.mp4
+*.avi
+
+# cameras.py --snapshots
+camera_*.jpg

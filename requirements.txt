@@ -1,0 +1,15 @@
+# The packages this project uses directly, at versions known to work together
+# (Python 3.14). Install from a lock file instead where there is one: it pins
+# everything these pull in too, to exact files by hash. See the README for the
+# setup on each kind of machine, and lock_requirements.py for making a lock.
+
+ultralytics==8.4.172
+opencv-python==5.0.0.93
+numpy==2.5.2
+imageio-ffmpeg==0.6.0  # bundled ffmpeg with H.264, for recording.py
+lap==0.5.13            # for p_track.py's tracker (Ultralytics would otherwise install it mid-run)
+
+# Pulled in by Ultralytics; pinned to the versions it's been tested with, as
+# newer ones (polars 2) came out after
+polars==1.44.2
+ultralytics-platform==0.1.78

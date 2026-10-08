@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guia do yolo-people-2-the-floor</title>
+<meta name="description" content="Como o yolo-people-2-the-floor segue pessoas num chão com uma câmara e projeta sobre elas: montagem física, calibração e como os ficheiros encaixam.">
+<link rel="alternate" hreflang="en" href="https://mattchu.github.io/yolo-people-2-the-floor/">
+<link rel="alternate" hreflang="pt-PT" href="https://mattchu.github.io/yolo-people-2-the-floor/pt/">
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --panel: #ffffff;
+    --ink: #1c1f24;
+    --muted: #5d6470;
+    --line: #d9dbe0;
+    --accent: #0b6e8a;
+    --accent-soft: #e2f1f5;
+    --floor: #efe9dc;
+    --tape: #e0a21b;
+    --light: #f4d35e;
+    --cam: #3b7dd8;
+    --person: #c2463b;
+    --code-bg: #f1f2f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171b;
+      --panel: #1c2026;
+      --ink: #e7e9ec;
+      --muted: #9aa3ae;
+      --line: #343a43;
+      --accent: #5cc3dd;
+      --accent-soft: #17323a;
+      --floor: #2a2720;
+      --tape: #e7b33e;
+      --light: #8a7a2e;
+      --cam: #6aa2f0;
+      --person: #e2675c;
+      --code-bg: #232830;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171b; --panel: #1c2026; --ink: #e7e9ec; --muted: #9aa3ae; --line: #343a43;
+    --accent: #5cc3dd; --accent-soft: #17323a; --floor: #2a2720; --tape: #e7b33e;
+    --light: #8a7a2e; --cam: #6aa2f0; --person: #e2675c; --code-bg: #232830;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+  }
+  main { max-width: 900px; margin: 0 auto; padding: 32px 16px 80px; }
+  header.hero { padding: 24px 0 8px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+  h1 { font-size: clamp(28px, 6vw, 42px); line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.01em; }
+  h2 { font-size: 26px; margin: 56px 0 12px; padding-top: 8px; }
+  h3 { font-size: 19px; margin: 28px 0 8px; }
+  p, li { max-width: 68ch; }
+  .lang { margin: 0 0 8px; font-size: 15px; text-align: right; max-width: none; }
+  .lang a { text-decoration: none; }
+  .lede { font-size: 19px; color: var(--muted); margin: 0 0 12px; }
+  a { color: var(--accent); }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.88em; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--code-bg); padding: 12px 14px; border-radius: 8px; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 18px; margin: 20px 0; }
+  nav.toc ol { margin: 6px 0; padding-left: 22px; }
+  nav.toc a { text-decoration: none; }
+  figure { margin: 22px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { color: var(--muted); font-size: 15px; margin-top: 8px; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 16px 0; }
+  .step { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .step .n { display: inline-block; width: 26px; height: 26px; line-height: 26px; text-align: center; border-radius: 50%; background: var(--accent); color: var(--bg); font-weight: 700; font-size: 14px; margin-right: 6px; }
+  .step h4 { margin: 0 0 6px; font-size: 16px; display: flex; align-items: center; }
+  .step p { margin: 0; font-size: 15px; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 15px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  .note { background: var(--accent-soft); border-radius: 10px; padding: 12px 16px; margin: 16px 0; }
+  .note p { margin: 0; }
+  footer { margin-top: 64px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: 16px; }
+  /* diagram text and shapes follow the theme */
+  svg text { fill: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif; }
+  svg .muted { fill: var(--muted); }
+  svg .box { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
+  svg .box-accent { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+  svg .arrow { stroke: var(--muted); stroke-width: 1.8; fill: none; }
+  svg .arrow-accent { stroke: var(--accent); stroke-width: 2; fill: none; }
+  svg .floor { fill: var(--floor); }
+  svg .tape { fill: var(--tape); }
+  svg .tape-line { stroke: var(--tape); stroke-width: 2.5; fill: none; stroke-dasharray: 6 5; }
+  svg .light { fill: var(--light); opacity: 0.45; }
+  svg .light-edge { stroke: var(--light); stroke-width: 1.5; fill: none; }
+  svg .cam { fill: var(--cam); }
+  svg .cam-view { fill: var(--cam); opacity: 0.12; }
+  svg .cam-edge { stroke: var(--cam); stroke-width: 1.5; fill: none; stroke-dasharray: 4 4; }
+  svg .person { fill: var(--person); }
+  svg .solid { fill: var(--ink); }
+  svg .stroke { stroke: var(--ink); stroke-width: 2; fill: none; }
+  @media print {
+    :root, :root[data-theme="dark"] {
+      --bg: #fff; --panel: #fff; --ink: #000; --muted: #444; --line: #bbb; --accent: #0b6e8a;
+      --accent-soft: #eef6f8; --floor: #f1ece0; --tape: #c88d0e; --light: #f4d35e; --cam: #2c6cc4;
+      --person: #b23a30; --code-bg: #f3f3f3;
+    }
+    body { font-size: 11pt; }
+    main { max-width: none; padding: 0; }
+    h2 { break-before: page; margin-top: 0; }
+    figure, .step, table, pre { break-inside: avoid; }
+    nav.toc { break-after: page; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <p class="lang"><a href="../" hreflang="en" lang="en">English</a></p>
+  <h1>yolo-people-2-the-floor</h1>
+  <p class="lede">Uma câmara observa pessoas num chão. O computador calcula onde cada uma está, em metros, envia isso por OSC, e um projetor desenha no chão exatamente debaixo dos seus pés.</p>
+  <p>Este guia mostra como funciona: a montagem física, a calibração que alinha tudo, e como os ficheiros se alimentam uns aos outros. Os comandos passo a passo estão no <a href="https://github.com/MattChu/yolo-people-2-the-floor/blob/main/README.pt.md">README</a>.</p>
+</header>
+
+<nav class="toc" aria-label="Índice">
+  <strong>Índice</strong>
+  <ol>
+    <li><a href="#overview">Como funciona, numa imagem</a></li>
+    <li><a href="#setup">A montagem física</a></li>
+    <li><a href="#spaces">Três maneiras de medir o chão</a></li>
+    <li><a href="#calibration">Calibração</a></li>
+    <li><a href="#running">Pôr uma peça a funcionar</a></li>
+    <li><a href="#osc">As mensagens OSC</a></li>
+    <li><a href="#files">Como os ficheiros encaixam</a></li>
+  </ol>
+</nav>
+
+<!-- 1 -->
+<h2 id="overview">1. Como funciona, numa imagem</h2>
+<p>Cada imagem da câmara passa pela mesma cadeia. O YOLO, um modelo de reconhecimento de imagem, encontra cada pessoa e os seus tornozelos. Os tornozelos são convertidos de píxeis da câmara para metros no chão. Um seguidor (<em>tracker</em>) acompanha cada pessoa de imagem para imagem e dá-lhe um id. As posições saem como mensagens OSC, que qualquer programa pode receber. Um sketch de Processing desenha em metros, e o seu desenho é ajustado ao projetor para aparecer onde as pessoas estão.</p>
+
+<figure>
+<svg viewBox="0 0 860 262" role="img" aria-label="Fluxo de dados: câmara, encontrar tornozelos, converter para metros no chão, seguir, OSC, o sketch desenha em metros, ajustar ao projetor, chão">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill: var(--muted)"/></marker>
+    <marker id="ahA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill: var(--accent)"/></marker>
+  </defs>
+  <!-- row 1: the tracker (Python) -->
+  <text x="20" y="22" class="muted" font-size="13">O seguidor (Python: track_osc.py)</text>
+  <rect x="20" y="34" width="150" height="62" rx="10" class="box"/>
+  <text x="95" y="61" text-anchor="middle" font-size="15" font-weight="600">Câmara</text>
+  <text x="95" y="81" text-anchor="middle" class="muted" font-size="12">cada imagem</text>
+  <rect x="200" y="34" width="150" height="62" rx="10" class="box"/>
+  <text x="275" y="61" text-anchor="middle" font-size="15" font-weight="600">Tornozelos</text>
+  <text x="275" y="81" text-anchor="middle" class="muted" font-size="12">YOLO pose</text>
+  <rect x="380" y="34" width="150" height="62" rx="10" class="box"/>
+  <text x="455" y="61" text-anchor="middle" font-size="15" font-weight="600">Metros no chão</text>
+  <text x="455" y="81" text-anchor="middle" class="muted" font-size="12">calibração da câmara</text>
+  <rect x="560" y="34" width="130" height="62" rx="10" class="box"/>
+  <text x="625" y="61" text-anchor="middle" font-size="15" font-weight="600">Seguir</text>
+  <text x="625" y="81" text-anchor="middle" class="muted" font-size="12">suaviza, mantém ids</text>
+  <rect x="720" y="34" width="120" height="62" rx="10" class="box-accent"/>
+  <text x="780" y="61" text-anchor="middle" font-size="15" font-weight="600">OSC</text>
+  <text x="780" y="81" text-anchor="middle" class="muted" font-size="12">/person id x y</text>
+  <line x1="170" y1="65" x2="196" y2="65" class="arrow" marker-end="url(#ah)"/>
+  <line x1="350" y1="65" x2="376" y2="65" class="arrow" marker-end="url(#ah)"/>
+  <line x1="530" y1="65" x2="556" y2="65" class="arrow" marker-end="url(#ah)"/>
+  <line x1="690" y1="65" x2="716" y2="65" class="arrow" marker-end="url(#ah)"/>
+  <!-- down -->
+  <path d="M780,96 L780,162" class="arrow-accent" marker-end="url(#ahA)"/>
+  <text x="770" y="134" text-anchor="end" class="muted" font-size="12">UDP, porta 12000</text>
+  <!-- row 2: the sketch -->
+  <text x="20" y="128" class="muted" font-size="13">Um sketch (Processing, ou qualquer programa que fale OSC)</text>
+  <rect x="720" y="168" width="120" height="62" rx="10" class="box-accent"/>
+  <text x="780" y="195" text-anchor="middle" font-size="15" font-weight="600">People</text>
+  <text x="780" y="215" text-anchor="middle" class="muted" font-size="12">quem está onde</text>
+  <rect x="470" y="168" width="220" height="62" rx="10" class="box"/>
+  <text x="580" y="195" text-anchor="middle" font-size="15" font-weight="600">O seu desenho</text>
+  <text x="580" y="215" text-anchor="middle" class="muted" font-size="12">em metros, no retângulo da fita</text>
+  <rect x="250" y="168" width="190" height="62" rx="10" class="box"/>
+  <text x="345" y="195" text-anchor="middle" font-size="15" font-weight="600">Ajustar ao projetor</text>
+  <text x="345" y="215" text-anchor="middle" class="muted" font-size="12">calibração do projetor</text>
+  <rect x="20" y="168" width="200" height="62" rx="10" class="box"/>
+  <text x="120" y="195" text-anchor="middle" font-size="15" font-weight="600">Luz no chão</text>
+  <text x="120" y="215" text-anchor="middle" class="muted" font-size="12">debaixo dos pés</text>
+  <line x1="720" y1="199" x2="694" y2="199" class="arrow" marker-end="url(#ah)"/>
+  <line x1="470" y1="199" x2="444" y2="199" class="arrow" marker-end="url(#ah)"/>
+  <line x1="250" y1="199" x2="224" y2="199" class="arrow" marker-end="url(#ah)"/>
+</svg>
+<figcaption>Em cima: <code>track_osc.py</code>. Em baixo: um sketch de Processing (a aba People, o seu desenho, a aba Projection). Qualquer outro programa que fale OSC pode ocupar o lugar da linha de baixo.</figcaption>
+</figure>
+
+<!-- 2 -->
+<h2 id="setup">2. A montagem física</h2>
+<p>É preciso um projetor apontado para o chão, uma câmara que veja toda a área projetada, e um retângulo marcado com fita no chão, dentro de ambos. Nada precisa de ficar de frente: a calibração corrige os ângulos da câmara e do projetor.</p>
+
+<figure>
+<svg viewBox="0 0 860 360" role="img" aria-label="Vista de lado: um projetor e uma câmara montados bem acima do chão, a luz do projetor e a vista da câmara a cobrir a área marcada, uma pessoa de pé lá dentro, e um portátil ligado a ambos">
+  <!-- floor -->
+  <rect x="20" y="300" width="820" height="16" class="floor"/>
+  <line x1="20" y1="300" x2="840" y2="300" class="stroke"/>
+  <!-- stand / ceiling -->
+  <line x1="120" y1="60" x2="120" y2="300" class="stroke"/>
+  <line x1="120" y1="60" x2="300" y2="60" class="stroke"/>
+  <!-- projector -->
+  <rect x="250" y="48" width="56" height="26" rx="4" class="solid"/>
+  <text x="278" y="38" text-anchor="middle" font-size="14" font-weight="600">Projetor</text>
+  <polygon points="282,74 380,300 730,300" class="light"/>
+  <!-- camera -->
+  <rect x="160" y="64" width="34" height="20" rx="4" class="cam"/>
+  <text x="177" y="104" text-anchor="middle" font-size="14" font-weight="600">Câmara</text>
+  <polygon points="190,80 330,300 790,300" class="cam-view"/>
+  <line x1="190" y1="80" x2="330" y2="300" class="cam-edge"/>
+  <line x1="190" y1="80" x2="790" y2="300" class="cam-edge"/>
+  <!-- tape marks on the floor -->
+  <rect x="420" y="296" width="14" height="8" class="tape"/>
+  <rect x="680" y="296" width="14" height="8" class="tape"/>
+  <line x1="427" y1="300" x2="687" y2="300" class="tape-line"/>
+  <text x="557" y="338" text-anchor="middle" font-size="14">retângulo de fita (medido em metros)</text>
+  <!-- person -->
+  <circle cx="560" cy="210" r="13" class="person"/>
+  <rect x="549" y="225" width="22" height="48" rx="8" class="person"/>
+  <rect x="551" y="270" width="7" height="30" rx="3" class="person"/>
+  <rect x="562" y="270" width="7" height="30" rx="3" class="person"/>
+  <!-- laptop -->
+  <rect x="30" y="262" width="62" height="38" rx="4" class="box"/>
+  <rect x="24" y="296" width="74" height="6" rx="2" class="solid"/>
+  <text x="20" y="252" font-size="14" font-weight="600">Computador</text>
+  <path d="M92,280 C110,250 110,220 120,196" class="arrow"/>
+  <text x="128" y="196" class="muted" font-size="12">projetor = 2.º ecrã</text>
+  <text x="128" y="212" class="muted" font-size="12">câmara = USB</text>
+  <!-- legend -->
+  <rect x="610" y="40" width="16" height="12" class="light"/>
+  <text x="634" y="51" font-size="13">luz do projetor</text>
+  <rect x="610" y="62" width="16" height="12" class="cam-view"/>
+  <line x1="610" y1="62" x2="626" y2="62" class="cam-edge"/>
+  <text x="634" y="73" font-size="13">vista da câmara</text>
+</svg>
+<figcaption>Vista de lado. Monte a câmara <strong>alta e a olhar para baixo</strong>: vistos de um ângulo rasante, os pés das pessoas (e os marcadores da calibração) ficam achatados e difíceis de encontrar.</figcaption>
+</figure>
+
+<figure>
+<svg viewBox="0 0 860 380" role="img" aria-label="Vista de cima: a vista da câmara e a área projetada sobrepostas, com o retângulo de fita dentro de ambas; marcas numeradas de 1 a 4, x ao longo da largura da marca 1 para a 2, y ao longo da altura da marca 1 para a 4">
+  <rect x="40" y="20" width="780" height="340" rx="10" class="floor"/>
+  <!-- camera view (large, perspective) -->
+  <polygon points="90,40 770,40 810,345 50,345" class="cam-view"/>
+  <polygon points="90,40 770,40 810,345 50,345" class="cam-edge"/>
+  <text x="96" y="60" font-size="13" style="fill: var(--cam)">vista da câmara</text>
+  <!-- projected area (keystoned) -->
+  <polygon points="170,80 700,95 730,320 140,305" class="light"/>
+  <polygon points="170,80 700,95 730,320 140,305" class="light-edge"/>
+  <text x="178" y="100" font-size="13">área projetada</text>
+  <!-- taped rectangle -->
+  <rect x="240" y="130" width="400" height="150" class="tape-line"/>
+  <g font-size="15" font-weight="700">
+    <circle cx="240" cy="130" r="13" class="tape"/><text x="240" y="135" text-anchor="middle" style="fill:#1c1f24">1</text>
+    <circle cx="640" cy="130" r="13" class="tape"/><text x="640" y="135" text-anchor="middle" style="fill:#1c1f24">2</text>
+    <circle cx="640" cy="280" r="13" class="tape"/><text x="640" y="285" text-anchor="middle" style="fill:#1c1f24">3</text>
+    <circle cx="240" cy="280" r="13" class="tape"/><text x="240" y="285" text-anchor="middle" style="fill:#1c1f24">4</text>
+  </g>
+  <text x="222" y="118" text-anchor="end" font-size="13">(0, 0)</text>
+  <text x="658" y="118" font-size="13">(W, 0)</text>
+  <text x="658" y="300" font-size="13">(W, H)</text>
+  <text x="222" y="300" text-anchor="end" font-size="13">(0, H)</text>
+  <!-- axes -->
+  <line x1="262" y1="152" x2="360" y2="152" class="arrow-accent" marker-end="url(#ahA)"/>
+  <text x="368" y="157" font-size="14" style="fill: var(--accent)">x (metros, ao longo da largura W)</text>
+  <line x1="262" y1="152" x2="262" y2="240" class="arrow-accent" marker-end="url(#ahA)"/>
+  <text x="272" y="232" font-size="14" style="fill: var(--accent)">y (ao longo da altura H)</text>
+  <!-- a person -->
+  <circle cx="520" cy="215" r="11" class="person"/>
+  <text x="520" y="196" text-anchor="middle" font-size="13">uma pessoa em (1,9; 0,9) m</text>
+</svg>
+<figcaption>Vista de cima. O retângulo de fita tem de ficar dentro da área projetada e da vista da câmara. Todas as posições (OSC, sketches) se medem em metros a partir da marca 1: <em>x</em> em direção à marca 2, <em>y</em> em direção à marca 4.</figcaption>
+</figure>
+
+<div class="steps">
+  <div class="step"><h4><span class="n">1</span>Projetor</h4><p>Aponte-o para o chão e ligue-o como <strong>segundo ecrã</strong> (estendido, não duplicado). Tome nota da sua resolução e da sua posição no ambiente de trabalho, p. ex. <code>1280x800</code> em <code>1920,0</code>.</p></div>
+  <div class="step"><h4><span class="n">2</span>Câmara</h4><p>Monte-a alta, a olhar para baixo, a ver toda a área projetada. Serve qualquer câmara, resolução ou cadência: uma webcam, uma câmara USB melhor, ou a imagem a cores de uma câmara de profundidade.</p></div>
+  <div class="step"><h4><span class="n">3</span>Fita</h4><p>Marque os quatro cantos de um retângulo dentro de ambas, meça a largura e a altura em metros, e lembre-se de qual é a marca 1.</p></div>
+  <div class="step"><h4><span class="n">4</span>Escuridão</h4><p>Calibre com a sala o mais escura possível, para a câmara conseguir ler os marcadores projetados.</p></div>
+</div>
+
+<!-- 3 -->
+<h2 id="spaces">3. Três maneiras de medir o chão</h2>
+<p>O mesmo ponto do chão tem três endereços diferentes: um píxel na imagem da câmara, um píxel na imagem do projetor, e uma posição em metros a partir da marca 1. A câmara e o projetor veem o chão de lado, por isso os seus píxeis esticam-se de maneira diferente ao longo dele. A calibração mede como converter entre os três, sob a forma de duas <em>homografias</em>: transformações que levam qualquer superfície plana vista de um ângulo para a mesma superfície vista de outro.</p>
+
+<figure>
+<svg viewBox="0 0 860 300" role="img" aria-label="Os píxeis da câmara convertem-se em metros no chão através de H_cam_to_floor; os metros convertem-se em píxeis do projetor através de H_floor_to_proj; ambas ficam guardadas em calibration.json">
+  <!-- camera -->
+  <text x="130" y="28" text-anchor="middle" font-size="15" font-weight="600">Imagem da câmara</text>
+  <text x="130" y="46" text-anchor="middle" class="muted" font-size="12">píxeis</text>
+  <rect x="30" y="60" width="200" height="150" rx="6" class="box"/>
+  <polygon points="78,92 182,92 214,196 46,196" class="floor"/>
+  <polygon points="96,118 164,118 180,176 80,176" class="tape-line"/>
+  <circle cx="148" cy="160" r="6" class="person"/>
+  <!-- floor -->
+  <text x="430" y="28" text-anchor="middle" font-size="15" font-weight="600">O chão</text>
+  <text x="430" y="46" text-anchor="middle" class="muted" font-size="12">metros a partir da marca 1</text>
+  <rect x="330" y="60" width="200" height="150" rx="6" class="box-accent"/>
+  <rect x="350" y="90" width="160" height="90" class="tape-line"/>
+  <circle cx="465" cy="152" r="6" class="person"/>
+  <text x="350" y="200" class="muted" font-size="11">(0,0)</text>
+  <text x="510" y="200" text-anchor="end" class="muted" font-size="11">(W,H)</text>
+  <!-- projector -->
+  <text x="730" y="28" text-anchor="middle" font-size="15" font-weight="600">Imagem do projetor</text>
+  <text x="730" y="46" text-anchor="middle" class="muted" font-size="12">píxeis</text>
+  <rect x="630" y="60" width="200" height="150" rx="6" class="box"/>
+  <polygon points="662,84 800,98 790,190 648,176" class="tape-line"/>
+  <circle cx="760" cy="160" r="6" class="person"/>
+  <!-- arrows -->
+  <line x1="234" y1="135" x2="324" y2="135" class="arrow-accent" marker-end="url(#ahA)"/>
+  <text x="279" y="124" text-anchor="middle" font-size="12" style="fill: var(--accent)">H_cam_to_floor</text>
+  <line x1="536" y1="135" x2="624" y2="135" class="arrow-accent" marker-end="url(#ahA)"/>
+  <text x="580" y="124" text-anchor="middle" font-size="12" style="fill: var(--accent)">H_floor_to_proj</text>
+  <!-- explanations -->
+  <text x="279" y="240" text-anchor="middle" font-size="13">das 4 marcas de fita</text>
+  <text x="279" y="258" text-anchor="middle" class="muted" font-size="12">em que clica na imagem da câmara</text>
+  <text x="580" y="240" text-anchor="middle" font-size="13">dos marcadores projetados</text>
+  <text x="580" y="258" text-anchor="middle" class="muted" font-size="12">+ os mesmos 4 cliques</text>
+  <text x="430" y="290" text-anchor="middle" class="muted" font-size="12">Ambas ficam guardadas em calibration.json. O seguidor usa a primeira; os sketches, a segunda.</text>
+</svg>
+<figcaption>Uma pessoa encontrada num píxel da câmara passa a ser uma posição em metros (seta da esquerda), que o seguidor envia. Um sketch desenha em metros, e o seu desenho passa a píxeis do projetor (seta da direita), para aparecer debaixo da mesma pessoa.</figcaption>
+</figure>
+
+<!-- 4 -->
+<h2 id="calibration">4. Calibração</h2>
+<p>A calibração faz-se com dois scripts, depois de saber que câmara usar. Repita-a sempre que a câmara ou o projetor mudarem de sítio.</p>
+
+<h3>Escolher a câmara</h3>
+<p>As câmaras escolhem-se por número. O <code>cameras.py</code> lista as que o computador vê, e <code>--snapshots</code> guarda uma imagem de cada, para as distinguir:</p>
+<pre><code>$ python cameras.py --snapshots
+  camera 0: 1280x720 (V4L2), average brightness 104, saved camera_0.jpg
+  camera 2: 1920x1080 (V4L2), average brightness 97, saved camera_2.jpg</code></pre>
+<p>Depois calibre com esse número. Peça uma resolução, uma cadência ou imagens comprimidas se quiser mais do que a câmara dá por omissão:</p>
+<pre><code>python calibrate.py --source 2 --proj-pos 1920,0 --proj-size 1280x800 --floor-size 2.4x1.4
+
+python calibrate.py --source 2 --width 1920 --height 1080 --fps 60 --fourcc MJPG \
+    --proj-pos 1920,0 --proj-size 1280x800 --floor-size 2.4x1.4</code></pre>
+<p>A câmara e a resolução ficam guardadas com a calibração, por isso tudo o que vem depois as usa sem ser preciso dizer-lhe. Uma câmara por HDMI (uma DSLR ou uma câmara de vídeo) funciona da mesma maneira, através de um dispositivo de captura HDMI para USB.</p>
+
+<h3><code>calibrate.py</code>: câmara, projetor e chão</h3>
+<div class="steps">
+  <div class="step"><h4><span class="n">1</span>Marcadores</h4><p>O projetor mostra uma grelha de marcadores ArUco quadrados, cada um com o seu padrão. A câmara encontra-os (carregue em ESPAÇO) e, como se sabe a posição de cada marcador no projetor, isto liga os píxeis da câmara aos píxeis do projetor.</p></div>
+  <div class="step"><h4><span class="n">2</span>Chão</h4><p>O projetor fica branco. Clique nas quatro marcas de fita na imagem da câmara, pela ordem. Com as medidas do retângulo, isso liga os píxeis da câmara a metros e, através do passo 1, os metros a píxeis do projetor.</p></div>
+  <div class="step"><h4><span class="n">3</span>Verificação</h4><p>O projetor desenha uma grelha em metros. Se o contorno ficar em cima da fita, carregue em <strong>s</strong> para guardar.</p></div>
+</div>
+
+<h3><code>foot_calibrate.py</code>: onde assentam os pés</h3>
+<p>O YOLO encontra tornozelos, não o ponto onde o pé toca no chão, e visto de lado a diferença é de vários centímetros. O projetor mostra alvos um de cada vez; põe-se em cada um com a cruz entre os pés, e o script aprende uma pequena correção entre o sítio onde foi detetado e o sítio onde estava realmente. Nos testes, o erro passou de cerca de 30 cm para cerca de 4 cm.</p>
+
+<h3>O que fica guardado</h3>
+<pre><code>calibration.json
+├── floor        width_m, height_m              o retângulo de fita
+├── cameras
+│   └── cam0     source, resolution             que câmara, a que resolução
+│                H_cam_to_floor                 píxeis da câmara → metros
+│                foot_correction                do foot_calibrate.py
+└── projectors
+    └── proj0    resolution, position           que ecrã é
+                 H_floor_to_proj                metros → píxeis do projetor</code></pre>
+<p>É específico do seu espaço, por isso não faz parte do repositório. Os sketches de Processing encontram-no na sua própria pasta ou na mais próxima acima dela.</p>
+
+<!-- 5 -->
+<h2 id="running">5. Pôr uma peça a funcionar</h2>
+<p>Correm dois programas lado a lado: o seguidor, e o que transformar as posições numa peça.</p>
+
+<figure>
+<svg viewBox="0 0 860 220" role="img" aria-label="O track_osc.py lê a câmara e o calibration.json e envia OSC; um sketch de Processing recebe-o, lê o calibration.json e desenha em ecrã inteiro no projetor">
+  <rect x="20" y="30" width="250" height="150" rx="12" class="box"/>
+  <text x="145" y="60" text-anchor="middle" font-size="16" font-weight="700">track_osc.py</text>
+  <text x="145" y="86" text-anchor="middle" font-size="13">lê a câmara</text>
+  <text x="145" y="106" text-anchor="middle" font-size="13">encontra e segue pessoas</text>
+  <text x="145" y="126" text-anchor="middle" font-size="13">envia mensagens /person</text>
+  <text x="145" y="158" text-anchor="middle" class="muted" font-size="12">--show: janela da câmara para confirmar</text>
+  <rect x="590" y="30" width="250" height="150" rx="12" class="box"/>
+  <text x="715" y="60" text-anchor="middle" font-size="16" font-weight="700">um sketch de Processing</text>
+  <text x="715" y="86" text-anchor="middle" font-size="13">recebe as mensagens</text>
+  <text x="715" y="106" text-anchor="middle" font-size="13">desenha em metros</text>
+  <text x="715" y="126" text-anchor="middle" font-size="13">em ecrã inteiro no projetor</text>
+  <text x="715" y="158" text-anchor="middle" class="muted" font-size="12">ou TouchDesigner, Max, Pd...</text>
+  <line x1="274" y1="105" x2="584" y2="105" class="arrow-accent" marker-end="url(#ahA)"/>
+  <text x="429" y="94" text-anchor="middle" font-size="14" style="fill: var(--accent)">OSC por UDP · 127.0.0.1:12000</text>
+  <text x="429" y="124" text-anchor="middle" class="muted" font-size="12">(--osc-host para enviar a outro computador)</text>
+  <rect x="345" y="160" width="170" height="44" rx="8" class="box-accent"/>
+  <text x="430" y="187" text-anchor="middle" font-size="13">calibration.json</text>
+  <path d="M345,182 C300,182 280,170 270,160" class="arrow" marker-end="url(#ah)"/>
+  <path d="M515,182 C560,182 580,170 590,160" class="arrow" marker-end="url(#ah)"/>
+</svg>
+<figcaption>Arranque-os por qualquer ordem. Sem câmara, <code>track_osc.py --simulate 3</code> envia três pessoas imaginárias a passear pelo chão; <code>--simulate 2 --with-camera</code> junta duas às reais.</figcaption>
+</figure>
+
+<p>O <code>follow.py</code> é o teste tudo-em-um: segue as pessoas e desenha ele próprio um círculo debaixo de cada uma, diretamente no projetor, sem precisar de sketch nem de OSC. Use-o para confirmar a calibração e o seguimento antes de pôr uma peça a funcionar.</p>
+
+<!-- 6 -->
+<h2 id="osc">6. As mensagens OSC</h2>
+<p>Uma mensagem por cada pessoa seguida, sempre que o seguidor processa uma imagem: tantas vezes quanto a câmara e o computador permitirem, ou conforme <code>--max-fps</code>.</p>
+<pre><code>/person  id x y</code></pre>
+<div class="table-wrap"><table>
+  <tr><th>Argumento</th><th>Tipo</th><th>Significado</th></tr>
+  <tr><td><code>id</code></td><td>int</td><td>o mesmo enquanto a pessoa estiver a ser seguida</td></tr>
+  <tr><td><code>x</code></td><td>float</td><td>metros a partir da marca 1 ao longo da largura, de 0 a W</td></tr>
+  <tr><td><code>y</code></td><td>float</td><td>metros a partir da marca 1 ao longo da altura, de 0 a H</td></tr>
+</table></div>
+<div class="note"><p><strong>Não se envia nada quando alguém sai.</strong> Esqueça quem não tiver dado notícias há cerca de meio segundo. O seguidor também perde às vezes alguém por um momento e volta a encontrá-lo com um novo id; a aba People dos sketches de Processing trata um id novo que aparece perto de alguém acabado de perder como a mesma pessoa, para que mantenha a sua cor.</p></div>
+<p>O <a href="https://github.com/MattChu/yolo-people-2-the-floor/blob/main/README.pt.md#6-as-mensagens-osc-e-como-usá-las-noutros-programas">README</a> mostra como recebê-las no TouchDesigner, Max, Pure Data e Python.</p>
+
+<!-- 7 -->
+<h2 id="files">7. Como os ficheiros encaixam</h2>
+<p>As setas vão de cada ficheiro para os ficheiros que ele usa.</p>
+
+<figure>
+<svg viewBox="0 0 860 470" role="img" aria-label="Dependências entre ficheiros: os quatro scripts usam calib_utils, cameras e recording; foot_calibrate, follow e track_osc usam pipeline; follow e track_osc usam osc; pipeline usa models, tracking, cameras e calib_utils; os sketches de Processing usam as abas People e Projection">
+  <text x="20" y="24" class="muted" font-size="13">Scripts que corre</text>
+  <g font-size="14" font-weight="600" text-anchor="middle">
+    <rect x="20" y="36" width="180" height="46" rx="10" class="box-accent"/><text x="110" y="64">calibrate.py</text>
+    <rect x="230" y="36" width="180" height="46" rx="10" class="box-accent"/><text x="320" y="64">foot_calibrate.py</text>
+    <rect x="440" y="36" width="180" height="46" rx="10" class="box-accent"/><text x="530" y="64">follow.py</text>
+    <rect x="650" y="36" width="190" height="46" rx="10" class="box-accent"/><text x="745" y="64">track_osc.py</text>
+  </g>
+  <!-- all four scripts share these: one bus line -->
+  <g class="arrow">
+    <path d="M110,82 L110,106"/><path d="M290,82 L290,106"/><path d="M500,82 L500,106"/><path d="M700,82 L700,106"/>
+    <path d="M110,106 L700,106"/>
+  </g>
+  <path d="M200,106 L200,176" class="arrow" marker-end="url(#ah)"/>
+  <text x="210" y="128" font-size="12" class="muted">os quatro usam</text>
+  <g text-anchor="middle">
+    <rect x="20" y="180" width="380" height="50" rx="10" class="box"/>
+    <text x="210" y="211" font-size="14" font-weight="600">calib_utils.py · cameras.py · recording.py</text>
+    <rect x="480" y="180" width="220" height="50" rx="10" class="box"/>
+    <text x="590" y="202" font-size="14" font-weight="600">pipeline.py</text>
+    <text x="590" y="220" font-size="12" class="muted">da imagem ao seguimento</text>
+    <rect x="720" y="180" width="120" height="50" rx="10" class="box"/>
+    <text x="780" y="202" font-size="14" font-weight="600">osc.py</text>
+    <text x="780" y="220" font-size="11" class="muted">também no follow</text>
+    <rect x="480" y="280" width="100" height="50" rx="10" class="box"/>
+    <text x="530" y="302" font-size="14" font-weight="600">models.py</text>
+    <text x="530" y="320" font-size="11" class="muted">+ foot_calibrate</text>
+    <rect x="600" y="280" width="100" height="50" rx="10" class="box"/>
+    <text x="650" y="310" font-size="14" font-weight="600">tracking.py</text>
+  </g>
+  <g class="arrow" marker-end="url(#ah)">
+    <path d="M340,82 C360,140 470,150 500,176"/>
+    <path d="M560,82 L560,176"/>
+    <path d="M740,82 C730,130 680,150 660,176"/>
+    <path d="M800,82 L800,176"/>
+    <path d="M530,230 L530,276"/>
+    <path d="M650,230 L650,276"/>
+    <path d="M480,205 L404,205"/>
+  </g>
+  <text x="442" y="252" text-anchor="middle" font-size="11" class="muted">o pipeline usa</text>
+  <text x="442" y="266" text-anchor="middle" font-size="11" class="muted">calib_utils, cameras</text>
+  <!-- calibration.json -->
+  <rect x="20" y="350" width="190" height="40" rx="8" class="floor" style="stroke: var(--tape); stroke-width: 1.5"/>
+  <text x="115" y="375" text-anchor="middle" font-size="13" font-weight="600">calibration.json</text>
+  <text x="225" y="367" font-size="12" class="muted">escrito pelo calibrate.py e pelo foot_calibrate.py,</text>
+  <text x="225" y="383" font-size="12" class="muted">lido por todos os outros, sketches incluídos</text>
+  <!-- processing -->
+  <text x="20" y="420" class="muted" font-size="13">processing/: cada sketch tem as mesmas duas abas, mais a sua aba principal</text>
+  <g font-size="13" text-anchor="middle">
+    <rect x="20" y="428" width="250" height="38" rx="8" class="box"/><text x="145" y="452">People.pde: OSC → pessoas</text>
+    <rect x="290" y="428" width="290" height="38" rx="8" class="box"/><text x="435" y="452">Projection.pde: canvas → projetor</text>
+    <rect x="600" y="428" width="240" height="38" rx="8" class="box-accent"/><text x="720" y="452">o seu sketch: desenha no canvas</text>
+  </g>
+</svg>
+<figcaption>O <code>pipeline.py</code> é o coração do seguimento, usado pelo <code>follow.py</code> e pelo <code>track_osc.py</code>; o <code>foot_calibrate.py</code> usa a sua deteção dos pés e o <code>models.py</code> diretamente. (O <code>p_track.py</code>, um teste rápido do YOLO, usa só o <code>cameras.py</code> e o <code>models.py</code>.)</figcaption>
+</figure>
+
+<div class="table-wrap"><table>
+  <tr><th>Ficheiro</th><th>O que faz</th></tr>
+  <tr><td><code>calibrate.py</code></td><td>Marcadores, cliques nas marcas de fita e uma verificação: cria o <code>calibration.json</code>.</td></tr>
+  <tr><td><code>foot_calibrate.py</code></td><td>Alvos para pisar: acrescenta a correção dos pés.</td></tr>
+  <tr><td><code>follow.py</code></td><td>Círculos debaixo das pessoas, desenhados diretamente no projetor, para confirmar o seguimento.</td></tr>
+  <tr><td><code>track_osc.py</code></td><td>O seguidor para pôr uma peça a funcionar: envia OSC, sem janela de projetor. <code>--simulate</code> para pessoas imaginárias.</td></tr>
+  <tr><td><code>pipeline.py</code></td><td>Uma imagem da câmara → pés (o ponto médio entre os tornozelos, ou a base do retângulo da pessoa se os tornozelos não forem claros) → metros no chão, dentro da fita → seguimento.</td></tr>
+  <tr><td><code>models.py</code></td><td>Carrega o YOLO no melhor hardware desta máquina: uma placa NVIDIA, se houver, senão o processador, com um limite de <em>threads</em> para deixar espaço ao sketch.</td></tr>
+  <tr><td><code>tracking.py</code></td><td>Associa os pés de cada imagem às pessoas já conhecidas, suaviza o seu movimento e mantém os seus ids durante breves falhas.</td></tr>
+  <tr><td><code>cameras.py</code></td><td>Imagens de qualquer câmara, escolhida pelo número, ou de um ficheiro de vídeo, tudo igual para o resto. Corra-o para listar as suas câmaras.</td></tr>
+  <tr><td><code>calib_utils.py</code></td><td>A matemática da calibração (homografias), o padrão de marcadores e funções para as janelas.</td></tr>
+  <tr><td><code>osc.py</code></td><td>Constrói e envia as mensagens OSC, sem nenhum pacote extra.</td></tr>
+  <tr><td><code>recording.py</code></td><td>As teclas c / p / f gravam a imagem da câmara, a imagem do projetor ou o ecrã, em <code>recordings/</code>.</td></tr>
+  <tr><td><code>processing/…/People.pde</code></td><td>Recebe o OSC e mantém cada pessoa estável: suavizada, a aparecer e desaparecer gradualmente, e reassociada quando o seguidor lhe muda o número.</td></tr>
+  <tr><td><code>processing/…/Projection.pde</code></td><td>Encontra a calibração e o ecrã do projetor, e ajusta o canvas do sketch, em escala de metros, ao chão.</td></tr>
+</table></div>
+
+<footer>
+  <p>yolo-people-2-the-floor · <a href="https://github.com/MattChu/yolo-people-2-the-floor">github.com/MattChu/yolo-people-2-the-floor</a> · licença MIT. Para guardar uma cópia, imprima esta página para PDF a partir do navegador.</p>
+</footer>
+
+</main>
+</body>
+</html>
