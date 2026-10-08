@@ -13,6 +13,8 @@ Run it to list the cameras it can find, and pick the number to use with --source
 """
 
 import argparse
+import math
+import threading
 
 import cv2
 
@@ -74,7 +76,7 @@ def open_frames(args, source=None):
     """Frame generator for `source` (default: the camera chosen on the command line)."""
     return frames_from_opencv(source or source_name(args), args.width, args.height,
                               getattr(args, "exposure", None), getattr(args, "fps", None),
-                              getattr(args, "fourcc", None))
+                              getattr(args, "fourcc", None), getattr(args, "max_fps", None))
 
 
 def set_exposure(cap, exposure):
@@ -90,7 +92,8 @@ def set_exposure(cap, exposure):
     return cap.set(cv2.CAP_PROP_EXPOSURE, exposure)
 
 
-def frames_from_opencv(source, width=None, height=None, exposure=None, fps=None, fourcc=None):
+def frames_from_opencv(source, width=None, height=None, exposure=None, fps=None, fourcc=None,
+                       max_fps=None):
     """Yield BGR frames from a camera number or a video file. For a camera,
     ask for this size, frame rate and pixel format where given (the camera
     gives the nearest it can), and fix its exposure."""
@@ -119,16 +122,89 @@ def frames_from_opencv(source, width=None, height=None, exposure=None, fps=None,
             exposure = None
         elif exposure is not None:
             print(f"Camera {source}: exposure fixed at {exposure:g}")
+    # at most max_fps frames a second: every `every`th frame the source gives
+    src_fps = cap.get(cv2.CAP_PROP_FPS)
+    every = max(1, math.ceil(src_fps / max_fps - 1e-6)) if max_fps and src_fps > 0 else 1
+    if every > 1:
+        print(f"Taking every {ordinal(every)} frame: {src_fps / every:g} a second (at most {max_fps:g})")
+    reader = LatestFrame(cap, every) if camera else None
     try:
         while True:
-            ok, frame = cap.read()
+            if reader:
+                ok, frame = reader.read()
+            else:  # a video file: skip the frames in between
+                ok = all(cap.grab() for _ in range(every - 1))
+                ok, frame = cap.read() if ok else (False, None)
             if not ok:
                 break
             yield frame
     finally:
+        if reader:
+            reader.stop()
         if camera and exposure is not None:
             set_exposure(cap, None)
         cap.release()
+
+
+def ordinal(n):
+    return {1: "", 2: "2nd", 3: "3rd"}.get(n, f"{n}th")
+
+
+class LatestFrame:
+    """Takes a camera's frames on its own thread, and gives out only fresh ones.
+
+    OpenCV queues a few frames from a camera, and read() gives the oldest: when
+    the tracker is slower than the camera (YOLO on a CPU), every frame it gets
+    is several of its own frames old, and the projection lags behind people by
+    up to a second. Here the thread takes every frame off the queue as it
+    arrives, but only grabs it (cheap). Once `every` frames have arrived since
+    the last one given out, each new one is decoded into a picture (retrieve,
+    the costly part) and kept, replacing the one before, so read() gets the
+    newest due frame at once if the tracker was busy, or waits for it. Frames
+    before then are dropped undecoded: so --max-fps 15 on a 30 fps camera
+    takes every 2nd frame, decoding only those."""
+
+    def __init__(self, cap, every=1):
+        self.cap = cap
+        self.every = every
+        self.grabbed = 0                # frames grabbed so far
+        self.given = 0                  # the number of the last frame given out
+        self.frame, self.number, self.ok = None, 0, True
+        self.new = threading.Condition()
+        self.running = True
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+    def _run(self):
+        # every call on cap is on this thread: grab and retrieve can't overlap
+        while self.running:
+            ok = self.cap.grab()
+            self.grabbed += 1
+            with self.new:
+                due = self.grabbed - self.given >= self.every
+            frame = None
+            if ok and due:
+                ok, frame = self.cap.retrieve()
+            if due or not ok:
+                with self.new:
+                    self.ok = ok
+                    if ok:
+                        self.frame, self.number = frame, self.grabbed
+                    self.new.notify()
+            if not ok:
+                return
+
+    def read(self):
+        """The newest due frame, waiting for one if need be: (ok, frame)."""
+        with self.new:
+            self.new.wait_for(lambda: self.frame is not None or not self.ok)
+            frame, self.frame = self.frame, None
+            self.given = self.number
+        return frame is not None, frame
+
+    def stop(self):
+        self.running = False
+        self.thread.join(timeout=2)
 
 
 def list_cameras(most=10, snapshots=False):

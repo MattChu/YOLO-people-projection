@@ -19,7 +19,8 @@ import struct
 
 def add_osc_args(p, default_port=12000):
     p.add_argument("--osc-host", default="127.0.0.1",
-                   help="where to send OSC (default: 127.0.0.1, this computer)")
+                   help="where to send OSC: an IP, or the network's broadcast address (e.g. "
+                        "192.168.1.255) to reach every computer on it (default: 127.0.0.1, this computer)")
     p.add_argument("--osc-port", type=int, default=default_port,
                    help=f"OSC port (default: {default_port}, what the Processing sketches listen on)")
 
@@ -53,6 +54,8 @@ class OscSender:
     def __init__(self, host, port):
         self.addr = (host, port)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # allowed to send to a broadcast address (e.g. 192.168.1.255) to reach the whole network
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
     def send(self, address, *args):
         try:

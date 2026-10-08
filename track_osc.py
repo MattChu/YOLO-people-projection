@@ -61,9 +61,10 @@ def parse_args():
                         "drag the corner to resize (default: 2)")
     add_record_args(p)
     p.add_argument("--max-fps", type=float, default=0,
-                   help="track at most this many frames a second, skipping the rest, to leave CPU "
-                        "for a sketch on the same computer, e.g. 15 on a laptop (default: 0 = every "
-                        "frame the camera gives, as fast as this computer can)")
+                   help="track at most this many frames a second, to leave CPU for a sketch on the "
+                        "same computer, e.g. 15 on a laptop: every 2nd, 3rd... frame the camera gives, "
+                        "whichever is the most up to this (default: 0 = every frame, as fast as "
+                        "this computer can)")
     p.add_argument("--status-every", type=float, default=5.0,
                    help="seconds between status lines (default: 5)")
     p.add_argument("--simulate", type=int, default=0, metavar="N",
@@ -155,8 +156,6 @@ def track(args, osc):
         rec = Recorder(args, "track_osc", kinds=("camera", "screen"))
     for frame in open_frames(args, pipe.source):
         now = time.perf_counter()
-        if args.max_fps > 0 and pipe.frames > 0 and now - t_last < 1 / args.max_fps:
-            continue  # skip this frame: YOLO is the expensive part, and the sketch needs the CPU too
         dt, t_last = now - t_last, now
         if pipe.frames > 0:  # the first frame's dt includes camera start-up
             fps = 0.9 * fps + 0.1 / max(dt, 1e-6)
