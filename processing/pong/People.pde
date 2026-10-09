@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 final int OSC_PORT = 12000;
 // drop a tracker id not heard from for this long: its Person is lost
-final int PERSON_TIMEOUT_MS = 500;
+final int PERSON_TIMEOUT_MS = 800;
 // fraction of the way a Person moves towards their latest sighting per frame at 60 fps
 final float EASE = 0.25;
 // people fade in when they arrive and out when they're lost, over this long

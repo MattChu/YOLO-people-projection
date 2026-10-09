@@ -322,7 +322,7 @@ python follow.py
 ```
 
 A circle is projected under each person's feet. Walk around: it should follow
-you. **g** toggles a floor grid, **q** quits.
+you. **g** shows a floor grid (it starts hidden), **q** quits.
 
 ---
 
@@ -394,7 +394,7 @@ tracks (as often as the camera and computer allow, or `--max-fps`), to
 | `y` | float | metres from tape mark 1, along the height (0 to H) |
 
 **Nothing is sent when someone leaves.** Forget anyone you haven't heard
-about for half a second or so (that also covers lost packets). If the tracker
+about for most of a second (that also covers lost packets). If the tracker
 loses someone, it keeps their id for a couple of seconds (`--reattach-time`):
 found again close to where they were lost (`--reattach-dist`),
 they're sent under the same id again. So keep a person you've stopped hearing

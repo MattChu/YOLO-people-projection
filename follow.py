@@ -19,7 +19,7 @@ copy of what's being projected (not needed, so not shown, with --windowed).
 Drag a window's corner to resize it; --window-scale and --projector-scale set
 the starting sizes.
 
-Keys (in any window): g = toggle floor grid, q / Esc = quit,
+Keys (in any window): g = floor grid on / off (starts off), q / Esc = quit,
   c / p / f = start/stop recording the camera window / projector / full screen
   (see recording.py; files go in recordings/).
 
@@ -82,7 +82,7 @@ def main():
     rec = Recorder(args, "follow")
     preview = open_windows(args, cam_win, pipe.cam["resolution"], PROJ_WIN, pipe.proj_pos, (proj_w, proj_h))
 
-    show_grid = not args.dark_objects  # projected grid lines could read as dark objects
+    show_grid = False  # g turns it on
     label = "objects" if args.dark_objects else "people"
     legend = "red = dark pixels, blue = search area" if args.dark_objects else "green = ankles, orange = box"
     fps = 0.0

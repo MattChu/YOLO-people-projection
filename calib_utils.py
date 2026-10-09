@@ -233,11 +233,13 @@ def add_window_args(p):
                    help="projector image in a normal window instead of full screen on the "
                         "projector (testing on one screen)")
     p.add_argument("--window-scale", type=float, default=2.0,
-                   help="starting camera window size as a multiple of the camera image; "
-                        "drag the corner to resize (default: 2)")
+                   help="starting camera window size as a multiple of the camera image, shrunk "
+                        "if need be to fit the laptop screen beside the preview; drag the corner "
+                        "to resize (default: 2)")
     p.add_argument("--projector-scale", type=float, default=0.5,
                    help="starting size of the projector preview (or the --windowed projector "
-                        "window) as a multiple of the projector resolution (default: 0.5)")
+                        "window) as a multiple of the projector resolution, shrunk to fit the "
+                        "same way (default: 0.5)")
 
 
 def resizable_window(name, size, scale, pos):
@@ -255,18 +257,37 @@ def open_projector_window(name, pos, size):
     cv2.setWindowProperty(name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 
+def laptop_width(proj_pos):
+    """How wide the laptop screen is, in desktop pixels, if the projector sits to
+    its right (the usual layout: the laptop's screen at 0, 0 and the projector's
+    starting where it ends), else None (unknown)."""
+    return proj_pos[0] if proj_pos and proj_pos[0] > 0 else None
+
+
+def fit_scale(scale, size, width):
+    """`scale`, shrunk if need be so `size` (w, h) at that scale is at most
+    `width` desktop pixels wide (no limit if width is None)."""
+    return scale if not width else min(scale, width / size[0])
+
+
 def open_windows(args, cam_win, cam_size, proj_win, proj_pos, proj_size):
     """The camera window at the top left of the laptop screen, and beside it a
-    preview of what's projected. The projector window goes full screen on the
-    projector, or with --windowed sits where the preview would (so no preview).
-    Returns whether there's a preview to update with show_preview()."""
-    resizable_window(cam_win, cam_size, args.window_scale, (0, 0))
-    beside = (int(cam_size[0] * args.window_scale) + 10, 0)
+    preview of what's projected, both shrunk if need be to fit on the laptop
+    screen (so the preview doesn't land on the projector). The projector window
+    goes full screen on the projector, or with --windowed sits where the preview
+    would (so no preview). Returns whether there's a preview to update with
+    show_preview()."""
+    room = laptop_width(proj_pos)
+    cam_scale = fit_scale(args.window_scale, cam_size, room and 0.62 * room)
+    cam_w = int(cam_size[0] * cam_scale)
+    proj_scale = fit_scale(args.projector_scale, proj_size, room and room - cam_w - 30)
+    resizable_window(cam_win, cam_size, cam_scale, (0, 0))
+    beside = (cam_w + 10, 0)
     if args.windowed:
-        resizable_window(proj_win, proj_size, args.projector_scale, beside)
+        resizable_window(proj_win, proj_size, proj_scale, beside)
         return False
     open_projector_window(proj_win, proj_pos, proj_size)
-    resizable_window(PREVIEW_WIN, proj_size, args.projector_scale, beside)
+    resizable_window(PREVIEW_WIN, proj_size, proj_scale, beside)
     return True
 
 

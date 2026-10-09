@@ -39,7 +39,7 @@ import time
 import cv2
 import numpy as np
 
-from calib_utils import apply_h, load_calibration, resizable_window
+from calib_utils import apply_h, fit_scale, laptop_width, load_calibration, resizable_window
 from cameras import add_camera_args, open_frames
 from osc import OscSender, add_osc_args
 from pipeline import FloorPipeline, add_pipeline_args
@@ -57,8 +57,8 @@ def parse_args():
     add_osc_args(p)
     p.add_argument("--show", action="store_true", help="show the camera with detections (for checking)")
     p.add_argument("--window-scale", type=float, default=2.0,
-                   help="--show: starting window size as a multiple of the camera image; "
-                        "drag the corner to resize (default: 2)")
+                   help="--show: starting window size as a multiple of the camera image, shrunk "
+                        "if need be to fit the laptop screen; drag the corner to resize (default: 2)")
     add_record_args(p)
     p.add_argument("--max-fps", type=float, default=0,
                    help="track at most this many frames a second, to leave CPU for a sketch on the "
@@ -152,7 +152,9 @@ def track(args, osc):
         crowd = Crowd(args, first_id=SIM_ID_BASE)
         print(f"Adding {args.simulate} imaginary people to the camera's")
     if args.show:
-        resizable_window(SHOW_WIN, pipe.cam["resolution"], args.window_scale, (0, 0))
+        room = laptop_width(pipe.proj_pos)  # keep it on the laptop screen
+        resizable_window(SHOW_WIN, pipe.cam["resolution"],
+                         fit_scale(args.window_scale, pipe.cam["resolution"], room and 0.9 * room), (0, 0))
         rec = Recorder(args, "track_osc", kinds=("camera", "screen"))
     for frame in open_frames(args, pipe.source):
         now = time.perf_counter()

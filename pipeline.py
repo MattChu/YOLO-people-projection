@@ -47,8 +47,9 @@ def add_pipeline_args(p):
     p.add_argument("--match-dist", type=float, default=None,
                    help="max jump in metres between frames for the same object "
                         "(default: 15%% of the projected area's size)")
-    p.add_argument("--max-missed", type=int, default=5,
-                   help="frames an object can go undetected before it's lost (default: 5)")
+    p.add_argument("--max-missed", type=int, default=10,
+                   help="frames an object can go undetected before it's lost: about 0.7 s at 14 fps "
+                        "(default: 10)")
     p.add_argument("--reattach-time", type=float, default=2.0,
                    help="seconds a lost object is remembered: found again in that time, it keeps "
                         "its id (default: 2)")

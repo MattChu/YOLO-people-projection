@@ -333,7 +333,7 @@ python follow.py
 ```
 
 É projetado um círculo debaixo dos pés de cada pessoa. Ande pelo espaço: o
-círculo deve segui-lo. **g** mostra ou esconde uma grelha no chão, **q** sai.
+círculo deve segui-lo. **g** mostra ou esconde uma grelha no chão (começa escondida), **q** sai.
 
 ---
 
@@ -407,7 +407,7 @@ imagem que segue (tantas vezes quanto a câmara e o computador permitirem, ou
 | `y` | float | metros a partir da marca 1, ao longo da altura (0 a H) |
 
 **Não se envia nada quando alguém sai.** Esqueça quem não tiver dado notícias
-há cerca de meio segundo (isso também cobre pacotes perdidos). Se o seguidor
+há quase um segundo (isso também cobre pacotes perdidos). Se o seguidor
 perder alguém, guarda o seu id durante uns segundos (`--reattach-time`): se
 voltar a encontrá-lo perto de onde o perdeu
 (`--reattach-dist`), envia-o outra vez com o mesmo id. Por isso, guarde durante

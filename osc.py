@@ -9,7 +9,7 @@ Each frame, one message per tracked person or object:
                       (0..width along the tape's first side, 0..height along the other)
 
 Nothing is sent when someone leaves: a receiver should drop anyone it hasn't
-heard about for a moment (the Processing sketches use half a second). That also
+heard about for a moment (the Processing sketches use 0.8 s). That also
 copes with lost UDP packets.
 """
 
